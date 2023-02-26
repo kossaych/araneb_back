@@ -1,0 +1,149 @@
+
+    {% load static %}
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <title>programming.forever</title>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+        <link rel="stylesheet" href="{% static 'assets/css/main.css/' %}" >
+        <style>
+            .code{
+                width: 98%;
+            }
+        </style>
+    </head>
+    <body class="is-preload">
+
+        <!-- Wrapper -->
+            <div id="wrapper">
+
+                <!-- Main -->
+                    <div id="main">
+                        <div class="inner">
+
+                            <!-- Header -->
+                                <header id="header">
+                                    <a href="http://127.0.0.1:8000/" class="logo"><strong>PROGRAMMING.</strong>FOREVER</a>
+                                    <ul class="icons">
+                                        <li><a href="#" class="icon brands fa-twitter"><span class="label">Twitter</span></a></li>
+                                        <li><a href="#" class="icon brands fa-facebook-f"><span class="label">Facebook</span></a></li>
+                                        <li><a href="#" class="icon brands fa-snapchat-ghost"><span class="label">Snapchat</span></a></li>
+                                        <li><a href="#" class="icon brands fa-instagram"><span class="label">Instagram</span></a></li>
+                                        
+                                    </ul>
+                                </header>
+ 
+
+                                <h1>{{cour.titre}}</h1>
+                                <!-- parts of course -->
+                                {%for part in parts %}
+
+                                   
+
+                                    <div class="">
+                                        <div class="text-dark ">
+                                            <h1>{{part.titre}}</h1>
+                                            <p style="width: 98%;margin: 5px auto;">{{part.content}}</p>
+                                          <img src="http://127.0.0.1:8000/media/{{ part.img }}" style="width: 98% ;margin: 5px auto;" alt="">
+                                          <pre class="code" style="width: 98% ;margin: 5px auto;background-color: black;">
+                                            <code style="width: 98% ;margin: 5px auto;background-color: black;">
+                                                {{part.code}} 
+                                            </code>
+                                          </pre>
+                                        </div>
+                                      
+                                    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                    
+                                
+                                {% endfor %}
+                        
+                                <!-- Footer -->
+                                <footer id="footer">
+                                    
+                                    <p class="copyright">&copy;BARHOUMI&CHAIDMI. All rights reserved </p>
+                                    <center>
+                                    <ul class="icons">
+                                        <li><a href="#" class="icon brands fa-twitter"><span class="label">Twitter</span></a></li>
+                                        <li><a href="#" class="icon brands fa-facebook-f"><span class="label">Facebook</span></a></li>
+                                        <li><a href="#" class="icon brands fa-snapchat-ghost"><span class="label">Snapchat</span></a></li>
+                                        <li><a href="#" class="icon brands fa-instagram"><span class="label">Instagram</span></a></li>
+                                        
+                                    </ul></center>
+                                </footer>
+
+                            
+
+                        </div>
+                    </div>
+
+                <!-- Sidebar -->
+                    <div id="sidebar">
+                        <div class="inner">
+
+                            <!-- Search -->
+                                <section id="search" class="alt">
+                                    <form method="post" action="#">
+                                        <input type="text" name="query" id="query" placeholder="Search" />
+                                    </form>
+                                </section>
+
+                            <!-- Menu -->
+                                <nav id="menu">
+                                    <header class="major">
+                                        <h2>Menu</h2>
+                                    </header>
+                                    <ul>
+                                        <li><a href="http://127.0.0.1:8000/">Homepage</a></li>
+                                        <li><a href="cours.html">cours</a></li>
+                                        <li><a href="exercices.html">exercices</a></li>
+                                        
+                                    </ul>
+                                </nav>
+
+                            
+                            <!-- Section -->
+                                <section>
+                                    <header class="major">
+                                        <h2>about as</h2>
+                                    </header>
+                                    <p>enter infomation</p>
+                                    <ul class="contact">
+                                        <li class="icon solid fa-envelope"><a href="#">achrafbarhoumi91@gmail.com</a></li>
+                                        <li class="icon solid fa-phone">+216 51-002-644</li>
+                                        <li class="icon solid fa-home">none</li>
+                                    </ul>
+                                </section>
+
+                            
+                                
+
+                        </div>
+                    </div>
+
+            </div>
+
+        <!-- Scripts -->
+            <script src="{% static 'assets/js/jquery.min.js' %}"></script>
+            <script src="{% static 'assets/js/browser.min.js' %}"></script>
+            <script src="{% static 'assets/js/breakpoints.min.js' %}"></script>
+            <script src="{% static 'assets/js/util.js' %}"></script>
+            <script src="{% static 'assets/js/main.js' %}"></script>
+
+    </body>
+</html>
+
