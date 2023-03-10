@@ -77,13 +77,13 @@ class FemalleStatistique(models.Model):
     TOPPN=models.IntegerField(null=True,blank=True)
     BASPN=models.IntegerField(null=True,blank=True)
     cons=models.IntegerField(null=True,blank=True)
-
 # liste des  poids des parents
 class PoidMalle(models.Model):
     malle=models.ForeignKey(Malle,on_delete=models.CASCADE ,null=True , blank=True)
     date_mesure=models.DateField(null=True,blank=True)
     valeur=models.IntegerField(null=True,blank=True)
     
+
 
 class PoidFemalle(models.Model):
     femalle=models.ForeignKey(Femalle,on_delete=models.CASCADE ,null=True , blank=True)
