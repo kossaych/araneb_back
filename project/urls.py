@@ -15,7 +15,6 @@ urlpatterns = [
     #path('blogs/',include('blog.urls')),
     #path('products/',include('product.urls')),
     #auth urls
-    path('',include('pages.urls')),   
     #path('api-token-auth',obtain_auth_token),
 ]
 urlpatterns+=static(settings.MEDIA_URL,document_root=settings.MEDIA_ROOT)

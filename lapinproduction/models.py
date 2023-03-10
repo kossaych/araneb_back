@@ -168,7 +168,6 @@ def list_dates(initial_date,final_date):
     
 
     for year in range(int(initial_date[:initial_date.index('-')]),int(final_date[:final_date.index('-')])+1):
-            print(year)
             for moi in range(1,13):
                 if moi in [4,6,9,11]:
                                 for jour in range(1,31):

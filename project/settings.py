@@ -26,7 +26,6 @@ INSTALLED_APPS = [
     'accounts.apps.AccountsConfig',
     'lapinproduction.apps.LapinproductionConfig',
     'parent.apps.ParentConfig',
-    'pages.apps.PagesConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
