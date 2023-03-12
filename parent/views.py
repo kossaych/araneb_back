@@ -85,7 +85,7 @@ def age(naissance):
                             jours_anné=jours_anné-365 
         age = jours_anné+jours_moi+ (today.day - jour)
         return  age """
-        str_d1 = (naissance)
+        str_d1 =str(naissance)
         aujourdhui_date=str(date.today())
         try :
             d1 = datetime.strptime(str_d1, "%Y-%m-%d")
@@ -1041,6 +1041,7 @@ class FemalleViewPk(APIView):
                 #'TPrp':TPrp(femalle.id,['california']),
                 #'TPnetrp':TPnetrp(femalle.id,['california']),
                 #'TMrp':TMrp(femalle.id,['california']),
+                
                 }              
                 
 
