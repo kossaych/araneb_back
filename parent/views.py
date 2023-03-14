@@ -6,6 +6,8 @@ from .models import*
 from .forms import *
 from .serializers import*
 import shutil
+import os
+from pathlib import Path
 from PIL import Image
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
@@ -16,6 +18,9 @@ from rest_framework.views import APIView
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 aujourdhui_date=str(timezone.now().year)+"-"+str(timezone.now().month)+'-'+str(timezone.now().day)
+base_path=str(Path(__file__).resolve().parent.parent)
+base_path.replace(os.sep, '/')
+print(base_path)
 # calculer l'age d'un lapin retourner le nombre de jour a partir du date de naissance (str!!) il retourne un entier
 def age(naissance):
         """         naissance=str(naissance)
@@ -966,14 +971,14 @@ class MalleImageViewPk(APIView):
                 if malle.state=='production':
                             malle.img=request.data['file']                                                  
                             malle.save()
-                            try:
+                            try: 
                                 basewidth = 200
                                 print(malle.img)
-                                img = Image.open('C:/Users/kossay/Desktop/araneb_back/project/media/'+str(malle.img))
+                                img = Image.open(base_path+'/media/'+str(malle.img))
                                 wpercent = (basewidth/float(img.size[0]))
                                 hsize = int((float(img.size[1])*float(wpercent)))
                                 img = img.resize((basewidth,hsize), Image.Resampling.LANCZOS)
-                                img.save('C:/Users/kossay/Desktop/araneb_back/project/media/'+str(malle.img))
+                                img.save(base_path+'/media/'+str(malle.img))
                                 return Response(status=status.HTTP_202_ACCEPTED)
                             except:
                                 malle=Malle.objects.get(id=id)
@@ -981,12 +986,12 @@ class MalleImageViewPk(APIView):
                                 for poid in poids:
                                     poid.delete()
                                 try:
-                                    shutil.rmtree(('C:/Users/kossay/Desktop/araneb_back/project/media/'+str(malle.img)[:str(malle.img).index('/')]))
+                                    shutil.rmtree((base_path+'/media/'+str(malle.img)[:str(malle.img).index('/')]))
                                 except :
                                     pass
                                 malle.delete()
                                 return Response(status=status.HTTP_400_BAD_REQUEST)
-                            
+
         else:return Response(status=status.HTTP_404_NOT_FOUND)
 
 
@@ -1008,11 +1013,11 @@ class FemalleImageViewPk(APIView):
                             try:
                                 basewidth = 200
                                 print(femalle.img)
-                                img = Image.open('C:/Users/kossay/Desktop/araneb_back/project/media/'+str(femalle.img))
+                                img = Image.open(base_path+'/media/'+str(femalle.img))
                                 wpercent = (basewidth/float(img.size[0]))
                                 hsize = int((float(img.size[1])*float(wpercent)))
                                 img = img.resize((basewidth,hsize), Image.Resampling.LANCZOS)
-                                img.save('C:/Users/kossay/Desktop/araneb_back/project/media/'+str(femalle.img))
+                                img.save(base_path+'/media/'+str(femalle.img))
                                 return Response(status=status.HTTP_202_ACCEPTED)
                             except:
                                 femalle=Femalle.objects.get(id=id)
@@ -1020,7 +1025,7 @@ class FemalleImageViewPk(APIView):
                                 for poid in poids:
                                     poid.delete()
                                 try:
-                                    shutil.rmtree(('C:/Users/kossay/Desktop/araneb_back/project/media/'+str(femalle.img)[:str(femalle.img).index('/')]))
+                                    shutil.rmtree((base_path+'/media/'+str(femalle.img)[:str(femalle.img).index('/')]))
                                 except :
                                     pass
                                 femalle.delete()
@@ -1173,7 +1178,7 @@ class FemalleViewPk(APIView):
                 for poid in poids:
                     poid.delete()
                 try:
-                    shutil.rmtree(('C:/Users/kossay/Desktop/araneb_back/project/media/'+str(femalle.img)[:str(femalle.img).index('/')]))
+                    shutil.rmtree((base_path+'/media/'+str(femalle.img)[:str(femalle.img).index('/')]))
                 except :
                     pass
                 femalle.delete()
@@ -1255,7 +1260,7 @@ class MalleViewPk(APIView):
                 for poid in poids:
                     poid.delete()
                 try:
-                    shutil.rmtree(('C:/Users/kossay/Desktop/araneb_back/project/media/'+str(malle.img)[:str(malle.img).index('/')]))
+                    shutil.rmtree((base_path+'/media/'+str(malle.img)[:str(malle.img).index('/')]))
                 except :
                     pass
                 malle.delete()
