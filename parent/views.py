@@ -928,6 +928,24 @@ class MalleView(APIView):
                 return Response(malle,status=status.HTTP_201_CREATED)
             return Response("le malle que vous voulez ajouter a un age trés petit",status=status.HTTP_400_BAD_REQUEST)    
         return Response('invalid data',status=status.HTTP_400_BAD_REQUEST)
+
+class MalleImageViewPk(APIView):
+    """ authentication_classes=[TokenAuthentication]
+    permission_classes=[IsAuthenticated] """
+    def virif_malle(self,id):
+        for malle in Malle.objects.all():
+            if malle.id == id :
+                return True
+        return False    
+    def put(self,request,id):
+        if self.virif_malle(id) or Malle.objects.get(id=id).user==request.user:
+                malle=Malle.objects.get(id=id)
+                if malle.state=='production':
+                            malle.img=request.data['file']                      
+                            malle.save()
+                            return Response(status=status.HTTP_202_ACCEPTED)
+        else:return Response(status=status.HTTP_404_NOT_FOUND)
+
 class FemalleViewPk(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]

@@ -9,5 +9,7 @@ urlpatterns = [
     path('api/femalle/<int:id>',views.FemalleViewPk.as_view(),name=''),
     path('api/femalle/cage_vide',views.CageVide.as_view(),name=''),
     path('api/femalles/production',views.FemalleProductionView.as_view(),name=""),
+    path('api/malle/img/<int:id>',views.MalleImageViewPk.as_view(),name=''),
+
 
 ]
