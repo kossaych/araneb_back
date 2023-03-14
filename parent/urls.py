@@ -10,6 +10,5 @@ urlpatterns = [
     path('api/femalle/cage_vide',views.CageVide.as_view(),name=''),
     path('api/femalles/production',views.FemalleProductionView.as_view(),name=""),
     path('api/malle/img/<int:id>',views.MalleImageViewPk.as_view(),name=''),
-
-
+    path('api/femalle/img/<int:id>',views.FemalleImageViewPk.as_view(),name=''),
 ]

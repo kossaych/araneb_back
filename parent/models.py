@@ -38,6 +38,7 @@ class Femalle(models.Model):
         ('Rex','Rex')
         )
     create_at=models.DateField(default=timezone.now)
+    img=models.ImageField(upload_to =upload_to,null=True , blank=True)
     user=models.ForeignKey(User,on_delete=models.CASCADE ,null=True,blank=True)
     cage=models.CharField(max_length=50,null=True,blank=True)
     race=models.CharField(choices=LAPIN_RACES ,max_length=200,null=True,blank=True)

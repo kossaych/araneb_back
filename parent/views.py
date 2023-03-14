@@ -5,6 +5,8 @@ from django.shortcuts import redirect, render
 from .models import*
 from .forms import *
 from .serializers import*
+import shutil
+from PIL import Image
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from django.views.generic import View
@@ -829,6 +831,7 @@ class FemalleView(APIView):
                     "race":femalle.race,
                     "date_naissance":femalle.date_naissance,
                     "cage":femalle.cage,
+                    'img':str(femalle.img),
                     "date_mort":femalle.date_mort,
                     "prix":femalle.prix,
                     "date_vent":femalle.date_vent,
@@ -847,7 +850,27 @@ class FemalleView(APIView):
                 user=request.user
                 femalle=Femalle.objects.create(race=request.data["race"],date_naissance=request.data["date_naissance"],cage=self.cage_vide(),user=user)
                 femalle.save()
-                return Response(status=status.HTTP_201_CREATED)
+                poids=[]
+                for poid in PoidFemalle.objects.filter(femalle=femalle):
+                        poids.append(
+                            {
+                                'femalle':str(poid.malle),
+                                'valeur':str(poid.valeur),
+                                'date_mesure':str(poid.date_mesure),
+                            })
+                femalle={
+                        'id':femalle.id,
+                        "race":femalle.race,
+                        "date_naissance":femalle.date_naissance,
+                        "cage":femalle.cage,
+                        "date_mort":femalle.date_mort,
+                        "prix":femalle.prix,
+                        "date_vent":femalle.date_vent,
+                        'state':femalle.state,
+                        'age':age(femalle.date_naissance),
+                        'poids':poids,
+                        }
+                return Response(femalle,status=status.HTTP_201_CREATED)
             return Response("la femalle que vous voulez ajouter a un age trés petit",status=status.HTTP_400_BAD_REQUEST)
         return Response("data not valid",status=status.HTTP_400_BAD_REQUEST)
 
@@ -941,10 +964,73 @@ class MalleImageViewPk(APIView):
         if self.virif_malle(id) or Malle.objects.get(id=id).user==request.user:
                 malle=Malle.objects.get(id=id)
                 if malle.state=='production':
-                            malle.img=request.data['file']                      
+                            malle.img=request.data['file']                                                  
                             malle.save()
-                            return Response(status=status.HTTP_202_ACCEPTED)
+                            try:
+                                basewidth = 200
+                                print(malle.img)
+                                img = Image.open('C:/Users/kossay/Desktop/araneb_back/project/media/'+str(malle.img))
+                                wpercent = (basewidth/float(img.size[0]))
+                                hsize = int((float(img.size[1])*float(wpercent)))
+                                img = img.resize((basewidth,hsize), Image.Resampling.LANCZOS)
+                                img.save('C:/Users/kossay/Desktop/araneb_back/project/media/'+str(malle.img))
+                                return Response(status=status.HTTP_202_ACCEPTED)
+                            except:
+                                malle=Malle.objects.get(id=id)
+                                poids=PoidMalle.objects.filter(malle=malle)
+                                for poid in poids:
+                                    poid.delete()
+                                try:
+                                    shutil.rmtree(('C:/Users/kossay/Desktop/araneb_back/project/media/'+str(malle.img)[:str(malle.img).index('/')]))
+                                except :
+                                    pass
+                                malle.delete()
+                                return Response(status=status.HTTP_400_BAD_REQUEST)
+                            
         else:return Response(status=status.HTTP_404_NOT_FOUND)
+
+
+
+class FemalleImageViewPk(APIView):
+    """ authentication_classes=[TokenAuthentication]
+    permission_classes=[IsAuthenticated] """
+    def virif_femalle(self,id):
+        for femalle in Femalle.objects.all():
+            if femalle.id == id :
+                return True
+        return False    
+    def put(self,request,id):
+        if self.virif_femalle(id) or Femalle.objects.get(id=id).user==request.user:
+                femalle=Femalle.objects.get(id=id)
+                if femalle.state=='production':
+                            femalle.img=request.data['file']                                                  
+                            femalle.save()
+                            try:
+                                basewidth = 200
+                                print(femalle.img)
+                                img = Image.open('C:/Users/kossay/Desktop/araneb_back/project/media/'+str(femalle.img))
+                                wpercent = (basewidth/float(img.size[0]))
+                                hsize = int((float(img.size[1])*float(wpercent)))
+                                img = img.resize((basewidth,hsize), Image.Resampling.LANCZOS)
+                                img.save('C:/Users/kossay/Desktop/araneb_back/project/media/'+str(femalle.img))
+                                return Response(status=status.HTTP_202_ACCEPTED)
+                            except:
+                                femalle=Femalle.objects.get(id=id)
+                                poids=PoidFemalle.objects.filter(femalle=femalle)
+                                for poid in poids:
+                                    poid.delete()
+                                try:
+                                    shutil.rmtree(('C:/Users/kossay/Desktop/araneb_back/project/media/'+str(femalle.img)[:str(femalle.img).index('/')]))
+                                except :
+                                    pass
+                                femalle.delete()
+                                return Response(status=status.HTTP_400_BAD_REQUEST)
+                            
+        else:return Response(status=status.HTTP_404_NOT_FOUND)
+
+
+
+
 
 class FemalleViewPk(APIView):
     authentication_classes = [TokenAuthentication]
@@ -1086,6 +1172,10 @@ class FemalleViewPk(APIView):
                 poids=PoidFemalle.objects.filter(femalle=femalle)
                 for poid in poids:
                     poid.delete()
+                try:
+                    shutil.rmtree(('C:/Users/kossay/Desktop/araneb_back/project/media/'+str(femalle.img)[:str(femalle.img).index('/')]))
+                except :
+                    pass
                 femalle.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
             else:return Response(status=status.HTTP_401_UNAUTHORIZED)    
@@ -1164,7 +1254,13 @@ class MalleViewPk(APIView):
                 poids=PoidMalle.objects.filter(malle=malle)
                 for poid in poids:
                     poid.delete()
+                try:
+                    shutil.rmtree(('C:/Users/kossay/Desktop/araneb_back/project/media/'+str(malle.img)[:str(malle.img).index('/')]))
+                except :
+                    pass
                 malle.delete()
+                
+                
                 return Response(status=status.HTTP_204_NO_CONTENT)
             else:return Response(status=status.HTTP_401_UNAUTHORIZED)    
         else:return Response(status=status.HTTP_404_NOT_FOUND) 
