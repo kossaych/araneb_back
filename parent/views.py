@@ -99,7 +99,10 @@ def age(naissance):
         except:
             d1 = str_d1
         d2 = datetime.strptime(aujourdhui_date, "%Y-%m-%d")
-        age = str(d2 - d1)
+        try :
+            age = str(d2 - d1)
+        except:
+             pass
         try :    
             age=int(age[:age.index('d')])
         except:
@@ -1052,13 +1055,24 @@ class FemalleViewPk(APIView):
                 if age(str(femalle.create_at))==0:
                     if femalle.state=='production':
                         if age(request.data["date_naissance"])>=120:
+                            if request.data.get("date_mort")=="":
+                                femalle.date_mort=None
+                            else:    
+                                femalle.date_mort=request.data.get("date_mort")
                             femalle.date_naissance=request.data.get('date_naissance')
                             femalle.race=request.data.get("race")
                             femalle.date_naissance=request.data.get("date_naissance")
                             femalle.cage=request.data.get("cage")
-                            femalle.date_mort=request.data.get("date_mort")
-                            femalle.prix=request.data.get("prix")
-                            femalle.date_vent=request.data.get("date_vent")
+                      
+                            if request.data.get("prix")=="":
+                                femalle.prix=None
+                            else:    
+                                femalle.prix=request.data.get("prix")
+                            
+                            if request.data.get("date_vent")=="":
+                                femalle.date_vent=None
+                            else:    
+                                femalle.date_vent=request.data.get("date_vent")
                             femalle.state=request.data.get('state')
                             femalle.save()
                             poids=[]
@@ -1260,7 +1274,7 @@ class MalleViewPk(APIView):
                 for poid in poids:
                     poid.delete()
                 try:
-                    shutil.rmtree((base_path+'/media/'+str(malle.img)[:str(malle.img).index('/')]))
+                    shutil.rmtree((base_path+'/media/'+str(malle.img)[:str(malle.img).index('/')]))# delete the dir of img of this malle
                 except :
                     pass
                 malle.delete()
