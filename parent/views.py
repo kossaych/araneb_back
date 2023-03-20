@@ -821,32 +821,16 @@ class FemalleView(APIView):
         # des fonctions du calcule pour calculer la prodectiviter d'une femalle
     def get(self,request):
         user=request.user
-       
         femalles=[]
         femalles.clear() 
         for femalle in Femalle.objects.filter(user=user,state="production"):
-                poids=[]
-                for poid in PoidFemalle.objects.filter(femalle=femalle):
-                    poids.append(
-                        {
-                            'femalle':str(poid.femalle),
-                            'valeur':str(poid.valeur),
-                            'date_mesure':str(poid.date_mesure),
-                        })
-               
                 femalles.append({
                     'id':femalle.id,
                     "race":femalle.race,
-                    "date_naissance":femalle.date_naissance,
-                    "cage":femalle.cage,
+                    #"cage":femalle.cage,
                     'img':str(femalle.img),
-                    "date_mort":femalle.date_mort,
-                    "prix":femalle.prix,
-                    "date_vent":femalle.date_vent,
-                    "state":femalle.state,
+                    #"state":femalle.state,
                     'age':age_handler(age(str(femalle.date_naissance))),
-                    'poid':poids,#liste des poids
-
                 }
                 )
                 
@@ -1014,7 +998,7 @@ class FemalleImageViewPk(APIView):
                             femalle.img=request.data['file']                                                  
                             femalle.save()
                             try:
-                                basewidth = 200
+                                basewidth = 100
                                 print(femalle.img)
                                 img = Image.open(base_path+'/media/'+str(femalle.img))
                                 wpercent = (basewidth/float(img.size[0]))
@@ -1052,53 +1036,32 @@ class FemalleViewPk(APIView):
         if self.virif_femalle(id) :
             if  Femalle.objects.get(id=id).user==request.user:
                 femalle=Femalle.objects.get(id=id)
-                if age(str(femalle.create_at))==0:
-                    if femalle.state=='production':
-                        if age(request.data["date_naissance"])>=120:
-                            if request.data.get("date_mort")=="":
-                                femalle.date_mort=None
-                            else:    
+                #if age(str(femalle.create_at))==0:
+                if femalle.state=='production':
+                        if request.data.get("date_mort"):  
+                            if not(age(request.data["date_mort"])<0 or age(femalle.date_naissance)<age(request.data["date_mort"])) :
                                 femalle.date_mort=request.data.get("date_mort")
-                            femalle.date_naissance=request.data.get('date_naissance')
+                            else:return Response("date de mort invalide",status=status.HTTP_400_BAD_REQUEST)  # l'age d'une mère doit etre super à 4 mois (120jours)     
+                        if request.data.get('date_naissance'):
+                            if age(request.data["date_naissance"])>=120:
+                                femalle.date_naissance=request.data.get('date_naissance')
+                            else:return Response("date de naissance invalide",status=status.HTTP_400_BAD_REQUEST)  # l'age d'une mère doit etre super à 4 mois (120jours)     
+                        if request.data.get('race'):    
                             femalle.race=request.data.get("race")
-                            femalle.date_naissance=request.data.get("date_naissance")
-                            femalle.cage=request.data.get("cage")
-                      
-                            if request.data.get("prix")=="":
-                                femalle.prix=None
-                            else:    
-                                femalle.prix=request.data.get("prix")
-                            
-                            if request.data.get("date_vent")=="":
-                                femalle.date_vent=None
-                            else:    
+                        if request.data.get('cage'):
+                            femalle.cage=request.data.get("cage")                  
+                        if request.data.get("prix")!="" and int(request.data.get("prix")) > 0:                              
+                            femalle.prix=request.data.get("prix")  
+                        else:return Response("prix invalide",status=status.HTTP_400_BAD_REQUEST)                                                   
+                        if request.data.get("date_vent")!="" and :  
+                            if not(age(request.data["date_vent"])<0 or age(femalle.date_naissance)<age(request.data["date_vent"])) :                                
                                 femalle.date_vent=request.data.get("date_vent")
-                            femalle.state=request.data.get('state')
-                            femalle.save()
-                            poids=[]
-                            for poid in PoidFemalle.objects.filter(femalle=femalle):
-                                poids.append(
-                                            {
-                                                'femalle':str(poid.femalle),
-                                                'valeur':str(poid.valeur),
-                                                'date_mesure':str(poid.date_mesure),
-                                            })
-                            femalle={
-                                    'id':femalle.id,
-                                    "race":femalle.race,
-                                    "date_naissance":femalle.date_naissance,
-                                    "cage":femalle.cage,
-                                    "date_mort":femalle.date_mort,
-                                    "prix":femalle.prix,
-                                    "date_vent":femalle.date_vent,
-                                    "state":femalle.state,
-                                    'age':age(str(femalle.date_naissance)),
-                                    'poid':poids,
-                            }
-                            return Response(femalle,status=status.HTTP_202_ACCEPTED)
-                        else:return Response("invalid date",status=status.HTTP_400_BAD_REQUEST)  # l'age d'une mère doit etre super à 4 mois (120jours) 
-                    else:return Response(status=status.HTTP_400_BAD_REQUEST) 
-                else:return Response('tu peut pas changer les information d un malle apés '+str(age(str(femalle.create_at)))+"jour de son ajout",status=status.HTTP_400_BAD_REQUEST)           
+                            else:return Response("date de vent invalide",status=status.HTTP_400_BAD_REQUEST)  # l'age d'une mère doit etre super à 4 mois (120jours)     
+                        femalle.state=request.data.get('state')
+                        femalle.save()  
+                        return Response(status=status.HTTP_202_ACCEPTED)     
+                else:return Response(status=status.HTTP_400_BAD_REQUEST) 
+                #else:return Response('tu peut pas changer les information d un malle apés '+str(age(str(femalle.create_at)))+"jour de son ajout",status=status.HTTP_400_BAD_REQUEST)           
             else:return Response(status=status.HTTP_401_UNAUTHORIZED)        
         else:return Response(status=status.HTTP_404_NOT_FOUND)
     def get(self,request,id):
@@ -1177,7 +1140,7 @@ class FemalleViewPk(APIView):
                         "prix":femalle.prix,
                         "date_vent":femalle.date_vent,
                         "state":femalle.state,
-                        'age':age_handler(age(str(femalle.date_naissance))),
+                        #'age':age_handler(age(str(femalle.date_naissance))),
                         'poid':poids,
                         'info':info,
                         }
