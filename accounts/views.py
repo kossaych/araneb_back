@@ -1,5 +1,5 @@
 from .models import*
-from lapinproduction.models import*
+from manager.models import*
 from .models import*
 from .serializers import*
 from django.contrib.auth import authenticate

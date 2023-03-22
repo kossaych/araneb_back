@@ -15,6 +15,18 @@ class Race(models.Model):
     Moyenne_production_par_accouplement=models.IntegerField(default=50)
     def __str__(self):
          return self.race
+class Maladie(models.Model):
+    TYPES_MALADIES_LAPINS=[   
+                        ("Les_maladies_dermatologiques","Les maladies dermatologiques"),
+                        ("Les_maladies_respiratoires","Les maladies respiratoires"),
+                        ("Les_maladies_digestives","Les maladies digestives"),
+                        ("Les_maladies_de_l'appareil_urinaire","Les maladies de l'appareil urinaire"),
+                        ("La_maladie_hémorragique_du_lapin","La maladie hémorragique du lapin"),
+                        ("Les_tumeurs","Les tumeurs"),
+    ]
+    maladie=models.CharField(max_length=200,default='____')
+    type=models.CharField(choices=TYPES_MALADIES_LAPINS,max_length=200,default='__')
+    
 class GeneralConfig(models.Model):
     user=models.ForeignKey(User,on_delete=models.CASCADE)
     DEVISE_LIST=(('din tun','din tun'),('din alg','din alg'))
@@ -25,7 +37,6 @@ class GeneralConfig(models.Model):
     nb_mortalité_naturel=models.IntegerField(default=2)
     consomation_naturel=models.IntegerField(default=7500)
     coup_alimentation=models.IntegerField(default=1)
-
 
 class CodeVirif(models.Model):
     username=models.ForeignKey(User,on_delete=models.CASCADE)
@@ -49,3 +60,28 @@ def add_profil_and_token(sender,instance,created,**kwargs):
             GeneralConfig.objects.create(
                                     user=instance
                                 )  
+            Race.objects.create(
+                                    user=instance,
+                                    race='Gaint Flander' 
+                                )
+            Race.objects.create(
+                                    user=instance,
+                                    race='Flemish Giant' 
+                                )
+            Race.objects.create(
+                                    user=instance,
+                                    race='Chinchilla' 
+                                )
+            Race.objects.create(
+                                    user=instance,
+                                    race='New Zealand White' 
+                                )
+            Race.objects.create(
+                                    user=instance,
+                                    race='California' 
+                                )
+            Race.objects.create(
+                                    user=instance,
+                                    race='Rex' 
+                                )
+                                
