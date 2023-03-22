@@ -6,13 +6,10 @@ from django.contrib.auth import views
 from rest_framework.authtoken.views import obtain_auth_token
 urlpatterns = [
     path('accounts/', include('accounts.urls')),
-    #path('accounts/', include('django.contrib.auth.urls')),
     path('admin/', admin.site.urls),
-    path('contabilités/',include('contabilité.urls')),
     path('manager/',include('manager.urls')),
-    #path('statistiques/',include('statistique.urls')),
-    #path('blogs/',include('blog.urls')),
-    #path('products/',include('product.urls')),
+
+    #path('accounts/', include('django.contrib.auth.urls')),
     #auth urls
     #path('api-token-auth',obtain_auth_token),
 ]
