@@ -4,7 +4,6 @@ from django.shortcuts import redirect, render
 from .models import*
 from .forms import *
 from .serializers import*
-import shutil
 import os
 from pathlib import Path
 from PIL import Image
@@ -23,6 +22,7 @@ from .untils import *
 aujourdhui_date=str(timezone.now().year)+"-"+str(timezone.now().month)+'-'+str(timezone.now().day)
 base_path=str(Path(__file__).resolve().parent.parent)
 base_path.replace(os.sep, '/')
+
 ############## API----WIEWS ##################### 
 class FemalleView(APIView):
     authentication_classes = [TokenAuthentication]
@@ -32,46 +32,38 @@ class FemalleView(APIView):
         user=request.user
         femalles=[]
         femalles.clear() 
-        for femalle in Femalle.objects.filter(user=user,state="production"):
+        for femalle in Femalle.objects.filter(user=user):
                 femalles.append({
                     'id':femalle.id,
                     "race":femalle.race.race,
                     #"cage":femalle.cage,
                     'img':str(femalle.img),
-                    #"state":femalle.state,
+                    "state":femalle.state,
                     #'age':age_handler(age(str(femalle.date_naissance))),
                 }
                 )
                 
         return Response(femalles,status=status.HTTP_200_OK)
     def post(self,request):
-        #serializer=FemalleSerializer(data=request.data)
         if age(request.data["date_naissance"])>=120:
                 user=request.user
-                femalle=Femalle.objects.create(race=Race.objects.get(race=request.data["race"]),date_naissance=request.data["date_naissance"],cage=Femalle.cage_vide(user),user=user)
+                try :
+                    femalle=Femalle.objects.create(img=request.data['file'],race=Race.objects.get(race=request.data["race"]),date_naissance=request.data["date_naissance"],cage=Femalle.cage_vide(user),user=user)
+                except:
+                     return Response('invalid data',status=status.HTTP_400_BAD_REQUEST)
                 femalle.save()
-                poids=[]
-                for poid in PoidFemalle.objects.filter(femalle=femalle):
-                        poids.append(
-                            {
-                                'femalle':str(poid.malle),
-                                'valeur':str(poid.valeur),
-                                'date_mesure':str(poid.date_mesure),
-                            })
-                femalle={
-                        'id':femalle.id,
-                        "race":femalle.race.race,
-                        "date_naissance":femalle.date_naissance,
-                        "cage":femalle.cage,
-                        "date_mort":femalle.date_mort,
-                        "prix":femalle.prix,
-                        "date_vent":femalle.date_vent,
-                        'state':femalle.state,
-                        'age':age(femalle.date_naissance),
-                        'poids':poids,
-                        }
-                return Response(femalle,status=status.HTTP_201_CREATED)
-        return Response("la femalle que vous voulez ajouter a un age trés petit",status=status.HTTP_400_BAD_REQUEST)
+                try :
+                    basewidth = 200
+                    img = Image.open(base_path+'/media/'+str(femalle.img))
+                    wpercent = (basewidth/float(img.size[0]))
+                    hsize = int((float(img.size[1])*float(wpercent)))
+                    img = img.resize((basewidth,hsize), Image.Resampling.LANCZOS)
+                    img.save(base_path+'/media/'+str(femalle.img))
+                except:
+                    femalle.delete_()
+                    return Response('choisir une image',status=status.HTTP_400_BAD_REQUEST)
+                return Response(status=status.HTTP_201_CREATED)
+        return Response("ladate de naissance invalide",status=status.HTTP_400_BAD_REQUEST)
 
 class MalleView(APIView):
     authentication_classes = [TokenAuthentication]
@@ -80,163 +72,70 @@ class MalleView(APIView):
         user=request.user
         malles=[]
         malles.clear()  
-        for malle in Malle.objects.filter(user=user,state='production'):
-                poids=[]
-                for poid in PoidMalle.objects.filter(malle=malle):
-                    poids.append(
-                        {
-                            'malle':str(poid.malle),
-                            'valeur':str(poid.valeur),
-                            'date_mesure':str(poid.date_mesure),
-                        })
-            
-             
+        for malle in Malle.objects.filter(user=user):
                 malles.append(
                 (
                 {
                 'id':malle.id,
                 'img':str(malle.img),
                 "race":malle.race.race,
-                "date_naissance":malle.date_naissance,
-                "cage":malle.cage,
-                "date_mort":malle.date_mort,
-                "prix":malle.prix,
-                "date_vent":malle.date_vent,
-                "state":malle.state,
                 'age':age(str(malle.date_naissance)),
-                'poid':poids,
+                'state':malle.state,
                 })
                 )
-                
         return Response(malles,status=status.HTTP_200_OK)        
     def post(self,request):
-
             if age(request.data["date_naissance"])>=120:
                 user=request.user
-                malle=Malle.objects.create(race=Race.objects.get(race=request.data["race"]),date_naissance=request.data["date_naissance"],cage=Malle.cage_vide(user),user=user)
-                poids=[]
-                for poid in PoidMalle.objects.filter(malle=malle):
-                        poids.append(
-                            {
-                                'malle':str(poid.malle),
-                                'valeur':str(poid.valeur),
-                                'date_mesure':str(poid.date_mesure),
-                            })
-                malle={
-                        'id':malle.id,
-                        "race":malle.race.race,
-                        "date_naissance":malle.date_naissance,
-                        "cage":malle.cage,
-                        "date_mort":malle.date_mort,
-                        "prix":malle.prix,
-                        "date_vent":malle.date_vent,
-                        'state':malle.state,
-                        'age':age(malle.date_naissance),
-                        'poids':poids,
-                        }  
-                return Response(malle,status=status.HTTP_201_CREATED)
-            return Response("le malle que vous voulez ajouter a un age trés petit",status=status.HTTP_400_BAD_REQUEST)    
+                print(request.data)
+                try :
+                    malle=Malle.objects.create(img=request.data['file'],race=Race.objects.get(race=request.data["race"]),date_naissance=request.data["date_naissance"],cage=Malle.cage_vide(user),user=user)
+                except:
+                     return Response('invalid data',status=status.HTTP_400_BAD_REQUEST)
+                malle.save()
+                try :
+                    basewidth = 200
+                    img = Image.open(base_path+'/media/'+str(malle.img))
+                    wpercent = (basewidth/float(img.size[0]))
+                    hsize = int((float(img.size[1])*float(wpercent)))
+                    img = img.resize((basewidth,hsize), Image.Resampling.LANCZOS)
+                    img.save(base_path+'/media/'+str(malle.img))
+                except:
+                    malle.delete_()
+                    return Response('choisir une image',status=status.HTTP_400_BAD_REQUEST)
+                return Response(status=status.HTTP_201_CREATED)
+            else:return Response("date de naissance invalide",status=status.HTTP_400_BAD_REQUEST)
 
-class MalleImageViewPk(APIView):
-    """ authentication_classes=[TokenAuthentication]
-    permission_classes=[IsAuthenticated] """  
-    def put(self,request,id):
-        try :
-            malle = Malle.objects.get(id=id)
-        except:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-        if malle.state=='production':
-                    malle.img=request.data['file']                                                  
-                    malle.save()
-                    try: 
-                        basewidth = 200
-                        print(malle.img)
-                        img = Image.open(base_path+'/media/'+str(malle.img))
-                        wpercent = (basewidth/float(img.size[0]))
-                        hsize = int((float(img.size[1])*float(wpercent)))
-                        img = img.resize((basewidth,hsize), Image.Resampling.LANCZOS)
-                        img.save(base_path+'/media/'+str(malle.img))
-                        return Response(status=status.HTTP_202_ACCEPTED)
-                    except:
-                        malle=Malle.objects.get(id=id)
-                        poids=PoidMalle.objects.filter(malle=malle)
-                        for poid in poids:
-                            poid.delete()
-                        try:
-                            shutil.rmtree((base_path+'/media/'+str(malle.img)[:str(malle.img).index('/')]))
-                        except :
-                            pass
-                        malle.delete()
-                        return Response(status=status.HTTP_400_BAD_REQUEST)
-
-class FemalleImageViewPk(APIView):
-    """ authentication_classes=[TokenAuthentication]
-    permission_classes=[IsAuthenticated] """  
-    def put(self,request,id):
-        try :
-            femalle = Femalle.objects.get(id=id)
-        except:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-        if femalle.state=='production':
-                    femalle.img=request.data['file']                                                  
-                    femalle.save()
-                    try: 
-                        basewidth = 200
-                        img = Image.open(base_path+'/media/'+str(femalle.img))
-                        wpercent = (basewidth/float(img.size[0]))
-                        hsize = int((float(img.size[1])*float(wpercent)))
-                        img = img.resize((basewidth,hsize), Image.Resampling.LANCZOS)
-                        img.save(base_path+'/media/'+str(femalle.img))
-                        return Response(status=status.HTTP_202_ACCEPTED)
-                    except:
-                        femalle=Femalle.objects.get(id=id)
-                        poids=PoidFemalle.objects.filter(femalle=femalle)
-                        for poid in poids:
-                            poid.delete()
-                        try:
-                            shutil.rmtree((base_path+'/media/'+str(femalle.img)[:str(femalle.img).index('/')]))
-                        except :
-                            pass
-                        femalle.delete()
-                        return Response(status=status.HTTP_400_BAD_REQUEST)
 
 class FemalleViewPk(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
-  
     def put(self,request,id):
         try :
             femalle=Femalle.objects.get(id=id)
         except:
             return Response(status=status.HTTP_404_NOT_FOUND)
         if  Femalle.objects.get(id=id).user==request.user:
-            #if age(str(femalle.create_at))==0:
+            if age(str(femalle.create_at))==0:
                 if femalle.state=='production':
-                        if request.data.get("date_mort"):  
-                            if not(age(request.data["date_mort"])<0 or age(femalle.date_naissance)<age(request.data["date_mort"])) :
-                                femalle.date_mort=request.data.get("date_mort")
-                            else:return Response("date de mort invalide",status=status.HTTP_400_BAD_REQUEST)  # l'age d'une mère doit etre super à 4 mois (120jours)     
-                        if request.data.get('date_naissance'):
-                            if age(request.data["date_naissance"])>=120:
-                                femalle.date_naissance=request.data.get('date_naissance')
-                            else:return Response("date de naissance invalide",status=status.HTTP_400_BAD_REQUEST)  # l'age d'une mère doit etre super à 4 mois (120jours)     
-                        if request.data.get('race'):    
+                    if age(request.data["date_naissance"])>=120:
+                        try :
+                            femalle.date_naissance=request.data.get('date_naissance')  
+                        except:
+                             return Response('invalid date naissance',status=status.HTTP_400_BAD_REQUEST)
+                        try :     
                             femalle.race.race=request.data.get("race")
-                        if request.data.get('cage'):
-                            femalle.cage=request.data.get("cage")                  
-                        if request.data.get("prix") != None and request.data.get("prix") != "" and int(request.data.get("prix")) > 0 :                              
-                            femalle.prix=request.data.get("prix")  
-                        #else:return Response("prix invalide",status=status.HTTP_400_BAD_REQUEST)                                                   
-                        if request.data.get("date_vent")!=None and request.data.get("date_vent")!="" :  
-                            if not(age(request.data["date_vent"])<0 or age(femalle.date_naissance)<age(request.data["date_vent"])) :                                
-                                femalle.date_vent=request.data.get("date_vent")
-                            else:return Response("date de vent invalide",status=status.HTTP_400_BAD_REQUEST)  # l'age d'une mère doit etre super à 4 mois (120jours)     
-                        if request.data.get("state")!=None and request.data.get("state")!="" :
-                            femalle.state=request.data.get('state')
+                        except:
+                             return Response('invalid race',status=status.HTTP_400_BAD_REQUEST)
+                        try :
+                            femalle.cage=request.data.get("cage")
+                        except:
+                             return Response('invalid cage',status=status.HTTP_400_BAD_REQUEST)
                         femalle.save()  
                         return Response(status=status.HTTP_202_ACCEPTED)     
+                    else:return Response("date de naissance invalide",status=status.HTTP_400_BAD_REQUEST)  # l'age d'une mère doit etre super à 4 mois (120jours)    
                 else:return Response(status=status.HTTP_400_BAD_REQUEST) 
-            #else:return Response('tu peut pas changer les information d un malle apés '+str(age(str(femalle.create_at)))+"jour de son ajout",status=status.HTTP_400_BAD_REQUEST)           
+            else:return Response('tu peut pas changer les information ',status=status.HTTP_400_BAD_REQUEST)           
         else:return Response(status=status.HTTP_401_UNAUTHORIZED)        
         
     def get(self,request,id):
@@ -319,64 +218,41 @@ class FemalleViewPk(APIView):
         except:
             return Response(status=status.HTTP_404_NOT_FOUND)
         if Femalle.objects.get(id=id).user==request.user:
-                femalle=Femalle.objects.get(id=id)
-                poids=PoidFemalle.objects.filter(femalle=femalle)
-                for poid in poids:
-                    poid.delete()
-                try:
-                    shutil.rmtree((base_path+'/media/'+str(femalle.img)[:str(femalle.img).index('/')]))
-                except :
-                    pass
-                femalle.delete()
+                femalle.delete_()
                 return Response(status=status.HTTP_204_NO_CONTENT)
         else:return Response(status=status.HTTP_404_NOT_FOUND)        
+
 class MalleViewPk(APIView):
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]   
+    permission_classes = [IsAuthenticated]
     def put(self,request,id):
         try :
             malle=Malle.objects.get(id=id)
         except:
             return Response(status=status.HTTP_404_NOT_FOUND)
         if  Malle.objects.get(id=id).user==request.user:
-                malle=Malle.objects.get(id=id)
-                if age(str(malle.create_at))==0:
-                    if malle.state=='production':
-                        if age(request.data["date_naissance"])>=120:
-                            malle.date_naissance=request.data.get('date_naissance')
+            if age(str(malle.create_at))==0:
+                if malle.state=='production':
+                    if age(request.data["date_naissance"])>=120:
+                        try :
+                            malle.date_naissance=request.data.get('date_naissance')  
+                        except:
+                             return Response('invalid date naissance',status=status.HTTP_400_BAD_REQUEST)
+                        try :     
                             malle.race.race=request.data.get("race")
-                            malle.date_naissance=request.data.get("date_naissance")
+                        except:
+                             return Response('invalid race',status=status.HTTP_400_BAD_REQUEST)
+                        try :
                             malle.cage=request.data.get("cage")
-                            malle.date_mort=request.data.get("date_mort")
-                            malle.prix=request.data.get("prix")
-                            malle.date_vent=request.data.get("date_vent")
-                            malle.state=request.data.get('state')
-                            malle.save()
-                            poids=[]
-                            for poid in PoidMalle.objects.filter(malle=malle):
-                                poids.append(
-                                            {
-                                                'malle':str(poid.malle),
-                                                'valeur':str(poid.valeur),
-                                                'date_mesure':str(poid.date_mesure),
-                                            })
-                            malle={
-                                    'id':malle.id,
-                                    "race":malle.race.race,
-                                    "date_naissance":malle.date_naissance,
-                                    "cage":malle.cage,
-                                    "date_mort":malle.date_mort,
-                                    "prix":malle.prix,
-                                    "date_vent":malle.date_vent,
-                                    "state":malle.state,
-                                    'age':age(str(malle.date_naissance)),
-                                    'poid':poids,
-                            }
-                            return Response(malle,status=status.HTTP_202_ACCEPTED)
-                        else:return Response("date not valid",status=status.HTTP_400_BAD_REQUEST)      # l'age d'un père doit etre super à 4 mois (120jours) 
-                    else:return Response(status=status.HTTP_400_BAD_REQUEST)  
-                else:return Response('tu peut pas changer les information d un malle apés '+str(age(str(malle.create_at)))+"jour de son ajout",status=status.HTTP_400_BAD_REQUEST)      
-        else:return Response(status=status.HTTP_404_NOT_FOUND)  
+                        except:
+                             return Response('invalid cage',status=status.HTTP_400_BAD_REQUEST)
+                        malle.save()  
+                        return Response(status=status.HTTP_202_ACCEPTED)     
+                    else:return Response("date de naissance invalide",status=status.HTTP_400_BAD_REQUEST)  # l'age d'une mère doit etre super à 4 mois (120jours)    
+                else:return Response(status=status.HTTP_400_BAD_REQUEST) 
+            else:return Response('tu peut pas changer les information ',status=status.HTTP_400_BAD_REQUEST)           
+        else:return Response(status=status.HTTP_401_UNAUTHORIZED)        
+        
     def get(self,request,id):
         try :
             malle=Malle.objects.get(id=id)
@@ -392,7 +268,19 @@ class MalleViewPk(APIView):
                                     'valeur':str(poid.valeur),
                                     'date_mesure':str(poid.date_mesure),
                                 })
-                return Response({'id':malle.id,"race":malle.race.race,"date_naissance":malle.date_naissance,"cage":malle.cage,"date_mort":malle.date_mort,"prix":malle.prix,"date_vent":malle.date_vent,"state":malle.state,'age':age(str(malle.date_naissance)),'poid':poids,},status=status.HTTP_200_OK)
+                malle={
+                       'id':malle.id,
+                       "race":malle.race.race,
+                       "date_naissance":malle.date_naissance,
+                       "cage":malle.cage,
+                       "date_mort":malle.date_mort,
+                       "prix":malle.prix,
+                       "date_vent":malle.date_vent,
+                       "state":malle.state,
+                       'age':age(str(malle.date_naissance)),
+                       'poid':poids,
+                       }
+                return Response(malle,status=status.HTTP_200_OK)
         return Response(status=status.HTTP_404_NOT_FOUND)    
     def delete(self,request,id):
         try :
@@ -400,25 +288,85 @@ class MalleViewPk(APIView):
         except:
             return Response(status=status.HTTP_404_NOT_FOUND)
         if Malle.objects.get(id=id).user==request.user:
-                malle=Malle.objects.get(id=id)
-                poids=PoidMalle.objects.filter(malle=malle)
-                for poid in poids:
-                    poid.delete()
-                try:
-                    shutil.rmtree((base_path+'/media/'+str(malle.img)[:str(malle.img).index('/')]))# delete the dir of img of this malle
-                except :
-                    pass
-                malle.delete()
-                
-                
+                malle.delete_()
                 return Response(status=status.HTTP_204_NO_CONTENT)
         else:return Response(status=status.HTTP_404_NOT_FOUND) 
+
+class FemalleVentPk(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    def put(self,request,id):
+        try :
+            femalle=Femalle.objects.get(id=id)
+        except:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        if  Femalle.objects.get(id=id).user==request.user:
+                #if femalle.state=='production': 
+                        print('test')
+                        prix=request.data.get("prix")
+                        date_vent=request.data.get("date_vent")
+                        return femalle.vent(prix,date_vent)      
+                #else:return Response(status=status.HTTP_400_BAD_REQUEST) 
+        else:return Response(status=status.HTTP_404_NOT_FOUND)        
+        
+class MalleVentPk(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    def put(self,request,id):
+        try :
+            malle=Malle.objects.get(id=id)
+        except:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        if  Malle.objects.get(id=id).user==request.user:
+                if malle.state=='production': 
+                        prix=request.data.get("prix")
+                        date_vent=request.data.get("date_vent")
+                        return malle.vent(prix,date_vent)      
+                else:return Response(status=status.HTTP_400_BAD_REQUEST) 
+        else:return Response(status=status.HTTP_401_UNAUTHORIZED)               
+
+class MalleMortPk(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    def put(self,request,id):
+        try :
+            malle=Malle.objects.get(id=id)
+        except:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        if  Malle.objects.get(id=id).user==request.user:
+                if malle.state=='production':
+                        date_mort=request.data.get("date_mort")
+                        return malle.mort(date_mort)
+                else:return Response(status=status.HTTP_400_BAD_REQUEST) 
+        else:return Response(status=status.HTTP_401_UNAUTHORIZED) 
+
+class FemalleMortPk(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    def put(self,request,id):
+        try :
+            femalle=Femalle.objects.get(id=id)
+        except:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        if  Femalle.objects.get(id=id).user==request.user:
+                if femalle.state=='production':
+                        date_mort=request.data.get("date_mort")
+                        return femalle.mort(date_mort)
+                else:return Response(status=status.HTTP_400_BAD_REQUEST) 
+        else:return Response(status=status.HTTP_401_UNAUTHORIZED)        
+       
+     
 # return un cage vide pour la criation d'une nouvelle femalle 
-class CageVide(APIView):
+class CageVideFemalle(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
     def get(self,request):
         return Response({"cage_vide":Femalle.cage_vide(request.user)},status=status.HTTP_200_OK)
+class CageVideMalle(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    def get(self,request):
+        return Response({"cage_vide":Malle.cage_vide(request.user)},status=status.HTTP_200_OK)
 
 # fonction responsable a la creation d'une femalle a partir des lapin de production
 class FemalleProductionView(APIView):
@@ -448,7 +396,36 @@ class FemalleProductionView(APIView):
                     lapin.state="femalle"
                     lapin.save()
                     return Response(status=status.HTTP_201_CREATED)
-                return Response("la femalle que vous voulez ajouter a un age trés petit",status=status.HTTP_400_BAD_REQUEST)
+                return Response("ladate de naissance invalide",status=status.HTTP_400_BAD_REQUEST)
+            return Response(status=status.HTTP_404_NOT_FOUND)
+# fonction responsable a la creation d'un malle a partir des lapin de production
+class MalleProductionView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    def get(self,request):
+        user=request.user
+        lapins=[]
+        lapins.clear() 
+        for lapin in LapinProduction.objects.filter(user=user,state="production",sex='malle'):
+            #if age(lapin.groupe.date_naissance)>=120:
+                lapins.append({
+                    'cage':lapin.cage,
+                    'id':lapin.id,
+                    "race":lapin.race,
+                    "groupe":lapin.groupe.cage,
+                }
+                )   
+        return Response(lapins,status=status.HTTP_200_OK)
+    def post(self,request):
+            lapin=LapinProduction.objects.get(id=request.data["lapin"])
+            if lapin.user==request.user:
+                if age(lapin.groupe.date_naissance)>=120:
+                    user=request.user
+                    malle=Malle.objects.create(race=request.data["race"],date_naissance=lapin.groupe.date_naissance,cage=self.cage_vide(),user=user)
+                    malle.save()
+                    lapin.delete()
+                    return Response(status=status.HTTP_201_CREATED)
+                return Response("ladate de naissance invalide",status=status.HTTP_400_BAD_REQUEST)
             return Response(status=status.HTTP_404_NOT_FOUND)
 
 #######################""""production""################
@@ -479,7 +456,7 @@ class AccouplementView(APIView):
         femalle=Femalle.objects.get(cage=request.data["mère"])
         user=request.user
         malle=request.data["père"]
-        if  (femalle.est_acouplement == False and femalle.user==user and femalle.state == "production")  or femalle.id == acc.mère.id :
+        if  (femalle.est_acouplet == False and femalle.user==user and femalle.state == "production")  or femalle.id == acc.mère.id :
             if  (malle.user==user and malle.state == "production"):
                 if age(request.data["date_acouplage"])>=0 and age(request.data["date_acouplage"])<=3:
                     acouplement=Accouplement(num=Accouplement.num_vide(request.user),user=request.user,père=Malle.objects.get(id=request.data["père"]),mère=Femalle.objects.get(id=request.data["mère"]),date_acouplage=request.data["date_acouplage"],test="non_vérifié",state='avant_naissance')
@@ -497,7 +474,7 @@ class AccouplementViewPk(APIView):
                     user=request.user
                     malle=request.data["père"]
                     if age(acc.create_at)<=1 :
-                        if  (femalle.est_acouplement == False and femalle.user==user and femalle.state == "production")  or femalle.id == acc.mère.id :
+                        if  (femalle.est_acouplet == False and femalle.user==user and femalle.state == "production")  or femalle.id == acc.mère.id :
                             if  (malle.user==user and malle.state == "production"):
                                 if age(request.data["date_acouplage"])>=0 and age(request.data["date_acouplage"])<=3:
                                     acc.mère=Femalle.objects.get(cage=request.data["mère"])
@@ -595,13 +572,13 @@ class FemallesAcouplementsView(APIView):
         femalles=[]
         femalles.clear()   
         for femalle in Femalle.objects.filter(user=user,state="production"):
-            if femalle.est_acouplement(): 
+            
+            if not femalle.est_acouplet(): 
                 femalles.append({
                     'id':femalle.id,
                     "cage":femalle.cage,  
                 }
                 )
-        
         return Response(femalles,status=status.HTTP_200_OK)
 # retourner les malles libres a acouplet
 class MallesAcouplementsView(APIView):
@@ -889,6 +866,7 @@ class LapinProductionView(APIView):
             serializer.save()
             return Response(serializer.data,status=status.HTTP_201_CREATED)
         return Response(serialier.data,status=status.HTTP_400_BAD_REQUEST)
+
 class LapinProductionViewPk(APIView):
     def virif_lap(self,id,user):
         for lap in LapinProduction.objects.filter(user=user):
@@ -952,6 +930,7 @@ class ProductionList(ListView):
         context['accouplements'] =accouplements
         context['infos'] =info
         return context
+
 class GroupeProductionCreate(LoginRequiredMixin,View):
     def virif_cage(self,cage):
         for groupe in GroupeProduction.objects.filter(user=self.request.user):
@@ -989,6 +968,7 @@ class GroupeProductionCreate(LoginRequiredMixin,View):
                                             )
             return redirect('production')
         return self.render(request)
+
 class AcouplementCreate(LoginRequiredMixin,View):
     def virif_num(self,num):
         for groupe in Accouplement.objects.filter(user=self.request.user):

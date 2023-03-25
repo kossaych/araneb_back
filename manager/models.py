@@ -6,15 +6,23 @@ from accounts.models import Race,Maladie,User
 from accounts.models import User
 from django.db.models.signals import post_save
 from .untils import *
+import shutil
+import os
+from pathlib import Path
+from rest_framework import status 
+from rest_framework.response import Response
+base_path=str(Path(__file__).resolve().parent.parent)
+base_path.replace(os.sep, '/')
+
 #import pandas as pd 
 def upload_to(instance,filename):
-    ext = filename.split('.')[-1]
-    filename = "%s.%s" % (uuid.uuid4(), ext)
+    extention = filename.split('.')[-1]
+    filename = str(uuid.uuid4())+"."+(extention)
     return '/'.join([str(instance.cage),filename])
 # general Lapin Fields
 class Lapin(models.Model):
     create_at=models.DateField(default=timezone.now)
-    img=models.ImageField(upload_to =upload_to,null=True , blank=True)
+    img=models.ImageField(upload_to = upload_to ,null=True , blank=True)
     user=models.ForeignKey(User,on_delete=models.CASCADE ,null=True,blank=True)
     cage=models.CharField(max_length=50,null=True,blank=True)
     race=models.ForeignKey(Race,on_delete=models.CASCADE ,null=True,blank=True)
@@ -23,7 +31,35 @@ class Lapin(models.Model):
     date_mort=models.DateField(null=True,blank=True)
     prix=models.IntegerField(null=True,blank=True)
     date_vent=models.DateField(null=True,blank=True)  
-    
+    #supremer la femalle et ca photo
+    def delete_(self):
+        """         poids=PoidFemalle.objects.filter(femalle=femalle)
+                for poid in poids:
+                    poid.delete() """
+        try:
+            shutil.rmtree((base_path+'/media/'+str(self.img)[:str(self.img).index('/')]))
+        except :
+            pass
+        self.delete()
+    # vent la femalle
+    def vent(self,prix,date_vent):
+            if prix != None and prix != "" and int(prix) > 0 :                              
+                self.prix= prix  
+            else:return Response("prix invalide",status=status.HTTP_400_BAD_REQUEST)                                                   
+            if date_vent!=None and date_vent!="" and not(age(date_vent)<0 or age(self.date_naissance)<age(date_vent)):  
+                    self.date_vent=date_vent
+            else:return Response("date de vent invalide",status=status.HTTP_400_BAD_REQUEST)  # l'age d'une mère doit etre super à 4 mois (120jours)     
+            self.state='vendue'
+            self.save()
+            return Response(status=status.HTTP_202_ACCEPTED)
+    def mort (self,date_mort):
+            if date_mort!=None and date_mort!="" and not(age(date_mort)<0 or age(self.date_naissance)<age(date_mort)):  
+                    self.date_mort=date_mort
+            else:return Response("date de mort invalide",status=status.HTTP_400_BAD_REQUEST)
+            self.state='mort'
+            self.save() 
+            return Response(status=status.HTTP_202_ACCEPTED)
+
     def __str__(self):
             return str(self.cage)
     class Meta:
@@ -48,8 +84,7 @@ class Poid(models.Model):
         abstract = True # Use this when the parent class contains common fields and the parent class table is not desirable.
 
 class Malle(Lapin):
-    date_naissance=models.DateField(default=timezone.now)   
-    
+    date_naissance=models.DateField(default=timezone.now) 
     @classmethod
     def virif_cage(cls,cage,user):
         for femalle in cls.objects.filter(user=user):
@@ -63,6 +98,10 @@ class Malle(Lapin):
                     return 'M'+str(cage)
         max=len(cls.objects.filter(user=user))
         return 'M'+str(max+1)
+    
+
+
+    
 class Femalle(Lapin):
     date_naissance=models.DateField(default=timezone.now)
     @classmethod
@@ -72,7 +111,9 @@ class Femalle(Lapin):
                     if cage == int((femalle.cage)[1:]):
                         return True
         return False      
-    @classmethod    
+
+    
+    @classmethod
     # return un cage vide pour la criation d'une nouvelle femalle       
     def cage_vide (cls,user):
         for cage in range(1,len(cls.objects.filter(user=user))+1):
@@ -433,7 +474,7 @@ class Femalle(Lapin):
     def __str__(self):
             return str(self.cage)
         # verifier si une femalle est acouplet ou non 
-    def est_acouplement(self):
+    def est_acouplet(self):
             for acc in Accouplement.objects.filter(mère=self,state="avant_naissance"):
                 if (age(acc.date_acouplage)<=35 and (acc.test=="enceinte" or acc.test=="non_vérifié")):
                     return True
@@ -627,7 +668,6 @@ class GroupeProduction(models.Model):
                     dates=self.dates_mesure_poids()
                     moyenne_poids=[]
                     for date in dates:
-                        print(date,age(date))
                         nb=0
                         totale=0
                         for poid in PoidLapinProduction.objects.all():

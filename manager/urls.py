@@ -7,10 +7,17 @@ urlpatterns = [
     path('api/malle/<int:id>',views.MalleViewPk.as_view(),name=''),
     path('api/femalles',views.FemalleView.as_view(),name=""),
     path('api/femalle/<int:id>',views.FemalleViewPk.as_view(),name=''),
-    path('api/femalle/cage_vide',views.CageVide.as_view(),name=''),
+    path('api/femalle/cage_vide',views.CageVideFemalle.as_view(),name=''),
+    path('api/malle/cage_vide',views.CageVideMalle.as_view(),name=''),
     path('api/femalles/production',views.FemalleProductionView.as_view(),name=""),
-    path('api/malle/img/<int:id>',views.MalleImageViewPk.as_view(),name=''),
-    path('api/femalle/img/<int:id>',views.FemalleImageViewPk.as_view(),name=''),
+    path('api/malles/production',views.MalleProductionView.as_view(),name=""),
+
+    path('api/femalle/vent/<int:id>',views.FemalleVentPk.as_view(),name=''),
+    path('api/malle/vent/<int:id>',views.MalleVentPk.as_view(),name=''),
+    path('api/femalle/mort/<int:id>',views.FemalleMortPk.as_view(),name=''),
+    path('api/malle/mort/<int:id>',views.MalleMortPk.as_view(),name=''),
+
+
 
 
 

@@ -1,6 +1,8 @@
 # calculer l'age d'un lapin retourner le nombre de jour a partir du date de naissance (str!!) il retourne un entier
 from datetime import date ,datetime
 from django.utils import timezone
+import pandas as pd
+
 
 def age(naissance):
         """ naissance=str(naissance)
@@ -74,7 +76,12 @@ def age(naissance):
         return  age """
         str_d1 = str(naissance)
         aujourdhui_date=str(date.today())
-        d1 = datetime.strptime(str_d1, "%Y-%m-%d")
+        print(str_d1)
+        try:
+            d1 = datetime.strptime(str_d1, "%Y-%m-%d")
+        except:
+            str_d1 = str_d1[:str_d1.find(" ")] # sa por séparer le date et l'heure
+            d1 = datetime.strptime(str_d1, "%Y-%m-%d")
         d2 = datetime.strptime(aujourdhui_date, "%Y-%m-%d")
         age = str(d2 - d1)
         try :    
@@ -137,7 +144,8 @@ def age_handler(naissance):
         return str(age)                                
 # retourner une liste contenant les dates succésivement a partir du intial_date jusqu'a final_date
 def list_dates(initial_date,final_date):
-    list_dates=[]
+    return pd.date_range(start=initial_date, end=final_date)
+    """ list_dates=[]
     (initial_date,final_date)
     for an in range(int(initial_date[:initial_date.index('-')]),int(final_date[:final_date.index('-')])+1):
             for moi in range(1,13):
@@ -232,8 +240,11 @@ def list_dates(initial_date,final_date):
                                         if jour in [1,2,3,4,5,6,7,8,9]:
                                             jour_date="0"+str(jour)
                                     date=str(an)+"-"+(moi_date)+"-"+(jour_date)    
-                                    list_dates.append(date)                                    
-    return list_dates[list_dates.index(initial_date):list_dates.index(final_date)+1]        
+                                    list_dates.append(date)   
+    try :                                 
+        return list_dates[list_dates.index(initial_date):list_dates.index(final_date)+1]  
+    except:
+        return []     """  
 # retourner le date de naissance a partir d'un age par jour
 def age_revers(age_jours):
         if age_jours >= 364 :
