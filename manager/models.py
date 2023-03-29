@@ -86,7 +86,7 @@ class Poid(models.Model):
 class Malle(Lapin):
     date_naissance=models.DateField(default=timezone.now) 
     @classmethod
-    def virif_cage(cls,cage,user):
+    def __virif_cage(cls,cage,user):
         for femalle in cls.objects.filter(user=user):
                     if cage == int((femalle.cage)[1:]):
                         return True
@@ -94,39 +94,35 @@ class Malle(Lapin):
     @classmethod          
     def cage_vide (cls,user):
         for cage in range(1,len(cls.objects.filter(user=user))+1):
-                if not cls.virif_cage(cage,user):
+                if not cls.__virif_cage(cage,user):
                     return 'M'+str(cage)
         max=len(cls.objects.filter(user=user))
         return 'M'+str(max+1)
-    
-
-
-    
+ 
 class Femalle(Lapin):
     date_naissance=models.DateField(default=timezone.now)
     @classmethod
     # une fonction pour verifier la posibilité de l'utilisation d'un num de cage return bool
-    def virif_cage(cls,cage,user):
+    def __virif_cage(cls,cage,user):
         for femalle in cls.objects.filter(user=user):
                     if cage == int((femalle.cage)[1:]):
                         return True
         return False      
-
-    
     @classmethod
-    # return un cage vide pour la criation d'une nouvelle femalle       
+    #return un cage vide pour la criation d'une nouvelle femalle       
     def cage_vide (cls,user):
         for cage in range(1,len(cls.objects.filter(user=user))+1):
-                if not cls.virif_cage(cage,user):
+                if not cls.__virif_cage(cage,user):
                     return 'F'+str(cage)
         max=len(cls.objects.filter(user=user))
         return 'F'+str(max+1)
+
     def dernier_groupe_production(self):
-            date=" "
+            date=""
             dernier_groupe={}
             for groupe in GroupeProduction.objects.all():
                 if groupe.acouplement.mère.id==self:
-                        if date==" ":
+                        if date=="":
                             date=groupe.date_naissance
                             dernier_groupe=groupe
                         elif age(groupe.date_naissance)<age(date):
@@ -136,274 +132,6 @@ class Femalle(Lapin):
                 return False # False sig que la femalle n"a pas encore des groupe
             else :
                 return dernier_groupe  
-    # totale de production des lapin par une femalle dernière naissance
-    def TP(self):
-        if self.dernier_groupe_production() == False:
-            return 0
-        else :
-            return self.dernier_groupe_production().nb_lapins_nées                                  
-    # totale de mortalité des lapin de production a la naissance  d'une femalle a la derniere naissance
-    def TMN(self):
-            if self.dernier_groupe_production()==False:
-                return 0
-            else :
-                return self.dernier_groupe_production().nb_lapins_mortes_naissances
-    # totale de mortalité des lapin de production d'une femalle a la derniere naissance
-    def TM(self):
-                nb=0
-                for lapin in LapinProduction.objects.all():
-                    if lapin.groupe==self.dernier_groupe_production() and lapin.state=="mort":
-                            nb=nb+1
-                return nb
-    # totale  des lapin de production non morte d'une femalle a la derniere naissance
-    def TPnet(self):
-                nb=0
-                for lapin in LapinProduction.objects.all():
-                    if lapin.groupe==self.dernier_groupe_production() and lapin.state=="production":
-                            nb=nb+1
-                return nb      
-    #m ou f pour les statistique des malles ou des femalles 
-    def TPm(self):
-                if self.dernier_groupe_production()==False:
-                    return 0
-                else :
-                    nb=0
-                    for lapin in LapinProduction.objects.all():
-                        if lapin.groupe == self.dernier_groupe_production() and lapin.sex=='malle':
-                                nb=nb+1
-                    return nb
-    def TMm(self):
-                if self.dernier_groupe_production()==False:
-                    return 0
-                else :
-                    nb=0
-                    for lapin in LapinProduction.objects.all():
-                        if lapin.groupe == self.dernier_groupe_production() and lapin.sex=='malle' and lapin.state=="mort":
-                                nb=nb+1
-                    return nb
-    def TPnetm(self):
-                return self.TPm()-self.TMm()
-    def TPf(self):
-                if self.dernier_groupe_production()==False:
-                    return 0
-                else :
-                    nb=0
-                    for lapin in LapinProduction.objects.all():
-                        if lapin.groupe == self.dernier_groupe_production() and lapin.sex=='femalle':
-                                nb=nb+1
-                    return nb
-    def TMf(self):
-                if self.dernier_groupe_production()==False:
-                    return 0
-                else :
-                    nb=0
-                    for lapin in LapinProduction.objects.all():
-                        if lapin.groupe == self.dernier_groupe_production() and lapin.sex=='femalle' and lapin.state=="mort":
-                                nb=nb+1
-                    return nb
-    def TPnetf(self):
-                return self.TPf()-self.TMf()
-    ##***************************************************************************(
-    # rp pour les statistique d'une race indiqué  !! le paramètre races doit etre une liste
-    def TPrp(self,races):
-                nb=0
-                for groupe in GroupeProduction.objects.all():
-                    
-                    if self==groupe.acouplement.mère.id :
-                        for lapin in LapinProduction.objects.all():
-                            
-                            if lapin.groupe.id == groupe.id  and lapin.race in races:
-                                nb=nb+1
-                return nb         
-    def TMrp(self,races):
-                nb=0
-                for groupe in GroupeProduction.objects.all():                    
-                        if self==groupe.acouplement.mère.id :
-                                for lapin in LapinProduction.objects.all():
-                                            
-                                            if lapin.groupe.id == groupe.id  and lapin.state=='mort' and lapin.race in races:
-                                                nb=nb+1
-                return nb
-    def TPnetrp(self,races):
-                return self.TPrp(self,races)-self.TMrp(self,races)
-    #*********************************************************************)
-
-
-    ###################////////// les statistiques des vent //////////////////###########
-    # return le nombre des lapins vendues  pandant ce mois
-    def TV(self):
-                nb=0
-                for lapin in LapinProduction.objects.all():
-                    if lapin.groupe.acouplement.mère.id == self  and lapin.state=='vendue':
-                        if str(lapin.date_vent).find('-')!=(-1):
-                            if age(str(lapin.date_vent))<= 32 :
-                                nb=nb+1
-                return nb   
-    #return le nombre des lapins malles vendues  pandant ce mois
-    def TVm(self):
-                nb=0
-                for lapin in LapinProduction.objects.all():
-                    if lapin.groupe.acouplement.mère.id == self  and lapin.state=='vendue':
-                        if lapin.sex=="malle":
-                            if str(lapin.date_vent).find('-')!=(-1):
-                                if age(str(lapin.date_vent))<= 32 :
-                                    nb=nb+1
-                return nb   
-    #return le nombre des lapins femalles vendues  pandant ce mois
-    def TVf(self):
-                nb=0
-                for lapin in LapinProduction.objects.all():
-                    if lapin.groupe.acouplement.mère.id == self  and lapin.state=='vendue':
-                        if lapin.sex=="femalle":
-                            if str(lapin.date_vent).find('-')!=(-1):
-                                if age(str(lapin.date_vent))<= 32 :
-                                    nb=nb+1
-                return nb   
-    #return le plus grands prix dans les prix des lapins vendues  pandant ce mois
-    def grandprix(self):
-                max=0
-                for lapin in LapinProduction.objects.all():
-                    if lapin.groupe.acouplement.mère.id == self  and lapin.state=='vendue':
-                            if str(lapin.date_vent).find('-')!=(-1):
-                                if age(str(lapin.date_vent))<= 32 :
-                                    if lapin.prix > max:
-                                        max=lapin.prix
-                return max
-    #return le plus bas prix dans les prix des lapins vendues  pandant ce mois
-    def basprix(self):
-                min=10000000000
-                for lapin in LapinProduction.objects.all():
-                    if lapin.groupe.acouplement.mère.id == self  and lapin.state=='vendue':
-                            if str(lapin.date_vent).find('-')!=(-1):
-                                if age(str(lapin.date_vent))<= 32 :  
-                                    if lapin.prix < min:
-                                        min=lapin.prix
-                if min==10000000000:
-                    return 0                        
-                return min            
-    ##return le totale des prix dans les prix des lapins vendues  pandant ce mois
-    def totaleprix(self):
-                totale=0
-                for lapin in LapinProduction.objects.all():
-                    if lapin.groupe.acouplement.mère.id == self  and lapin.state=='vendue':
-                            if str(lapin.date_vent).find('-')!=(-1):
-                                if age(str(lapin.date_vent))<= 32 :
-                                    totale=totale+lapin.prix
-                return totale 
-    ##return le moyenne des prix prix dans les prix des lapins vendues  pandant ce mois
-    def moyprix(self):
-        if self.TV() !=0 :
-            return self.totaleprix(self)/self.TV() 
-        return 0                        
-    ################################################################################
-
-
-    ############//////// les statistiques des poids ///////////////###########################
-    # retourner la dernier date de mesure des poids d'un groupe de production
-    def date_dernier_mesure(id_groupe):
-                date=""
-                for poid in PoidLapinProduction.objects.all():
-                    if poid.lapin.groupe.id==id_groupe:
-                            if date=="":
-                                date=poid.date_mesure
-                            elif age(poid.date_mesure)<age(date):
-                                date=poid.date_mesure
-                return date 
-    # moyenne des poids du dernière groupe du production a la naissance
-    def MPN(self):
-                totale_poids=0
-                nblapins=0
-                for poid in PoidLapinProduction.objects.all():
-                    if poid.lapin.groupe==self.dernier_groupe_production():
-                        if poid.date_mesure==poid.lapin.groupe.date_naissance:
-                                        nblapins+=1
-                                        totale_poids=totale_poids+poid.valeur
-                moy=0
-                if nblapins != 0 :
-                    moy=totale_poids/nblapins
-                return moy           
-    # le plus grand poid des poids du dernière groupe du production a la naissance
-    def TOPPN(self):
-                max=0
-                for poid in PoidLapinProduction.objects.all():
-                    if poid.lapin.groupe==self.dernier_groupe_production():
-                        if poid.date_mesure==poid.lapin.groupe.date_naissance:
-                            if poid.valeur > max:
-                                max=poid.valeur
-                return max  
-    ## le plus bas poid des poids du dernière groupe du production a la naissance
-    def BASPN(self):
-                min=99999
-                for poid in PoidLapinProduction.objects.all():
-                    if poid.lapin.groupe==self.dernier_groupe_production():
-                        if poid.date_mesure==poid.lapin.groupe.date_naissance:
-                            if poid.valeur < min:
-                                min=poid.valeur
-                return min      
-
-    # moyenne des poids du dernière groupe de production la dernière mesure
-    def MPDM(self):
-                totale_poids=0
-                nblapins=0
-                for poid in PoidLapinProduction.objects.all():
-                    if poid.lapin.groupe==self.dernier_groupe_production():
-                        if poid.date_mesure==self.date_dernier_mesure(poid.lapin.groupe):
-                                        nblapins+=1
-                                        totale_poids=totale_poids+poid.valeur
-                moy=0
-                if nblapins != 0 :
-                    moy=totale_poids/nblapins
-                return moy       
-    # le plus grand poid des poids du dernière groupe du production la dernière mesure
-    def TOPPDM(self):
-                max=0
-                for poid in PoidLapinProduction.objects.all():
-                    if poid.lapin.groupe==self.dernier_groupe_production():
-                        if poid.date_mesure==poid.lapin.groupe.self.date_dernier_mesure(poid.lapin.groupe):
-                            if poid.valeur > max:
-                                max=poid.valeur
-                return max  
-    ## le plus bas poid des poids du dernière groupe du production la dernière mesure
-    def BASPDM(self):
-                min=99999
-                for poid in PoidLapinProduction.objects.all():
-                    if poid.lapin.groupe==self.dernier_groupe_production():
-                        if poid.date_mesure==poid.lapin.groupe.self.date_dernier_mesure(poid.lapin.groupe):
-                            if poid.valeur < min:
-                                min=poid.valeur
-                return min      
-
-    # moyenne des poids du dernière groupe du production au sevrage
-    def MPS(self):
-                totale_poids=0
-                nblapins=0
-                for poid in PoidLapinProduction.objects.all():
-                    if poid.lapin.groupe==self.dernier_groupe_production():
-                        if poid.date_mesure==poid.lapin.groupe.date_souvrage:
-                                        nblapins+=1
-                                        totale_poids=totale_poids+poid.valeur
-                moy=0
-                if nblapins != 0 :
-                    moy=totale_poids/nblapins
-                return moy  
-    # le plus grand poid des poids du dernière groupe du production au sevrage
-    def TOPPS(self):
-                max=0
-                for poid in PoidLapinProduction.objects.all():
-                    if poid.lapin.groupe==self.dernier_groupe_production():
-                        if poid.date_mesure==poid.lapin.groupe.date_souvrage:
-                            if poid.valeur > max:
-                                max=poid.valeur
-                return max         
-    ## le plus bas poid des poids du dernière groupe du production au sevrage
-    def BASPS(self):
-                min=99999
-                for poid in PoidLapinProduction.objects.all():
-                    if poid.lapin.groupe==self.dernier_groupe_production():
-                        if poid.date_mesure==poid.lapin.groupe.date_souvrage:
-                            if poid.valeur < min:
-                                min=poid.valeur
-                return min      
     ##################################################################################################
     ################# consomation ################################
     # le totale de consomation d'une femalle dans les 30 dernière jours
@@ -575,7 +303,7 @@ class GroupeProduction(models.Model):
         nb_lapins_mortes_naissances=models.IntegerField(default=0)
         @classmethod
         # verifier si un cage vide ou non
-        def virif_cage(cls,cage,user):
+        def __virif_cage(cls,cage,user):
             for groupe in cls.objects.filter(user=user):
                         if cage == int((groupe.cage)[1:]):
                             return True
@@ -584,7 +312,7 @@ class GroupeProduction(models.Model):
         # retoiurner un cage vide pour les naveaux groupe    
         def cage_vide (cls,user):
             for i in range(1,len(cls.objects.filter(user=user))+1):
-                    if not cls.virif_cage(i,user):
+                    if not cls.__virif_cage(i,user):
                         return 'G'+str(i)
             max=0
             for groupe in cls.objects.filter(user=user):
@@ -718,6 +446,138 @@ class GroupeProduction(models.Model):
                 elif(age(GroupeProduction.objects.get(id=self.id).date_naissance)-age(date))> 60:
                     totale+=(150*nb_lapin)
             return totale                    
+        # calculer le moyenne des poid des lapins du groupe au sevrage
+        def moyenne_poid_souvrage(self):
+            moy=0
+            nb=0
+            for poid in PoidLapinProduction.objects.all():
+                if poid.lapin.groupe.id==self.id:
+                        if poid.date_mesure==self.date_souvrage :
+                            nb=nb+1
+                            moy=moy+poid.valeur
+            if nb!=0:
+                return int(moy/nb) 
+            else:
+                return "y'a pas des mesures"
+        ###################////////// les statistiques des vent //////////////////###########
+        # return le nombre des lapins vendues  pandant ce mois
+        def totale_vent(self):
+                    nb=0
+                    for lapin in LapinProduction.objects.all():
+                        if lapin.groupe == self  and lapin.state=='vendue':
+                            if str(lapin.date_vent).find('-')!=(-1):
+                                    nb=nb+1
+                    return nb   
+        # return le nombre des lapins malles vendues  pandant ce mois
+        def totale_vent_malle(self):
+                    nb=0
+                    for lapin in LapinProduction.objects.all():
+                        if lapin.groupe == self  and lapin.state=='vendue':
+                            if lapin.sex=="malle":
+                                if str(lapin.date_vent).find('-')!=(-1):
+                                        nb=nb+1
+                    return nb   
+        # return le nombre des lapins femalles vendues  pandant ce mois
+        def totale_vent_femalle(self):
+                    nb=0
+                    for lapin in LapinProduction.objects.all():
+                        if lapin.groupe == self  and lapin.state=='vendue':
+                            if lapin.sex=="femalle":
+                                if str(lapin.date_vent).find('-')!=(-1):
+                                        nb=nb+1
+                    return nb   
+        # return le plus grands prix dans les prix des lapins vendues  pandant ce mois
+        def grand_prix(self):
+                    max=0
+                    for lapin in LapinProduction.objects.all():
+                        if lapin.groupe == self  and lapin.state=='vendue':
+                                if str(lapin.date_vent).find('-')!=(-1):
+                                        if lapin.prix > max:
+                                            max=lapin.prix
+                    return max
+        #return le plus bas prix dans les prix des lapins vendues  pandant ce mois
+        def bas_prix(self):
+                    min=10000000000
+                    for lapin in LapinProduction.objects.all():
+                        if lapin.groupe == self  and lapin.state=='vendue':
+                                if str(lapin.date_vent).find('-')!=(-1):  
+                                        if lapin.prix < min:
+                                            min=lapin.prix
+                    if min==10000000000:
+                        return 0                        
+                    return min            
+        ##return le totale des prix dans les prix des lapins vendues  pandant ce mois
+        def totale_prix(self):
+                    totale=0
+                    for lapin in LapinProduction.objects.all():
+                        if lapin.groupe == self  and lapin.state=='vendue':
+                                if str(lapin.date_vent).find('-')!=(-1):
+                                        totale=totale+lapin.prix
+                    return totale 
+        ##return le moyenne des prix prix dans les prix des lapins vendues  pandant ce mois
+        def moy_prix(self):
+            if self.TV() !=0 :
+                return self.totaleprix(self)/self.TV() 
+            return 0                        
+        # le plus grand poid des poids du dernière groupe du production a la naissance
+        def TOPPN(self):
+                    max=0
+                    for poid in PoidLapinProduction.objects.all():
+                        if poid.lapin.groupe==self :
+                            if poid.date_mesure==poid.lapin.groupe.date_naissance:
+                                if poid.valeur > max:
+                                    max=poid.valeur
+                    return max  
+        ## le plus bas poid des poids du dernière groupe du production a la naissance
+        def BASPN(self):
+                    min=''
+                    for poid in PoidLapinProduction.objects.all():
+                        if poid.lapin.groupe==self :
+                            if poid.date_mesure==poid.lapin.groupe.date_naissance:
+                                if  min == '' or poid.valeur < min:
+                                    min=poid.valeur
+                    if min=="":
+                          return 0
+                    return min      
+        # le plus grand poid des poids du dernière groupe du production la dernière mesure
+        def TOPPDM(self):
+                    max=0
+                    for poid in PoidLapinProduction.objects.all():
+                        if poid.lapin.groupe==self :
+                            if poid.date_mesure==poid.lapin.groupe.self.date_dernier_mesure(poid.lapin.groupe):
+                                if poid.valeur > max:
+                                    max=poid.valeur
+                    return max  
+        ## le plus bas poid des poids du dernière groupe du production la dernière mesure
+        def BASPDM(self):
+                    min=""
+                    for poid in PoidLapinProduction.objects.all():
+                        if poid.lapin.groupe==self :
+                            if poid.date_mesure==poid.lapin.groupe.self.date_dernier_mesure(poid.lapin.groupe):
+                                if min=='' or poid.valeur < min:
+                                    min=poid.valeur
+                    if min=='' :return 0
+                    return min      
+        # le plus grand poid des poids du dernière groupe du production au sevrage
+        def TOPPS(self):
+                    max=0
+                    for poid in PoidLapinProduction.objects.all():
+                        if poid.lapin.groupe==self :
+                            if poid.date_mesure==poid.lapin.groupe.date_souvrage:
+                                if poid.valeur > max:
+                                    max=poid.valeur
+                    return max         
+        ## le plus bas poid des poids du dernière groupe du production au sevrage
+        def BASPS(self):
+                    min=''
+                    for poid in PoidLapinProduction.objects.all():
+                        if poid.lapin.groupe==self :
+                            if poid.date_mesure==poid.lapin.groupe.date_souvrage:
+                                if min == '' or poid.valeur < min:
+                                    min=poid.valeur
+                    if min == '' :return 0
+                    return min      
+
         def __str__(self):
             return str(self.cage)     
 

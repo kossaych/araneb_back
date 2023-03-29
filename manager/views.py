@@ -87,7 +87,6 @@ class MalleView(APIView):
     def post(self,request):
             if age(request.data["date_naissance"])>=120:
                 user=request.user
-                print(request.data)
                 try :
                     malle=Malle.objects.create(img=request.data['file'],race=Race.objects.get(race=request.data["race"]),date_naissance=request.data["date_naissance"],cage=Malle.cage_vide(user),user=user)
                 except:
@@ -150,52 +149,60 @@ class FemalleViewPk(APIView):
                 if (femalle.dernier_groupe_production()!=False):
                     groupeprod=femalle.dernier_groupe_production().id
                 
-                info={
-            
-                'TP':femalle.TP(),
-                'TM':femalle.TM(),
-                'TMN':femalle.TMN(),
-                'TPnet':femalle.TPnet(),
-                "dernière_groupe":groupeprod,
+                if femalle.dernier_groupe_production() == False or age(femalle.dernier_groupe_production().date_naissance) > 35:
+                    info = {
                 
-                #'TPf':femalle.TPf(),
-                #'TMf':femalle.TMf(),
-                #'TPnetf':femalle.TPnetf(),
+                    'TP':0,
+                    'TM':0,
+                    'TMN':0,
+                    'TPnet':0,
+                    "dernière_groupe":groupeprod,
+                    
+    
+                    #"MPDM":femalle.dernier_groupe_production().moyenne_poid_groupe_dernier_mesure(),
+                    #"TOPPDM":femalle.dernier_groupe_production().TOPPDM(),
+                    #"BASPDM":femalle.dernier_groupe_production().BASPDM(),
+                    #"MPN":0,
+                    #"TOPPN":femalle.dernier_groupe_production().TOPPN(),
+                    #"BASPN":femalle.dernier_groupe_production().BASPN(),
+                    #"MPS":0,
+                    #"TOPPS":femalle.dernier_groupe_production().TOPPS(),
+                    #"BASPS":femalle.dernier_groupe_production().BASP(),
 
-                #'TPm':femalle.TPm(),
-                #'TMm':femalle.TMm(),
-                #'TPnetm':femalle.TPnetm(),
- 
-                "TV":femalle.TV(),
-                #"TVm":femalle.TVm(),
-                #"TVf":femalle.TVf(),
-                "totale_prix":femalle.totaleprix(),
-                "grand_prix":femalle.grandprix(),
-                "bas_prix":femalle.basprix(),
-                "moy_prix":femalle.moyprix(),
+                    "cons_moi":str(femalle.cons(age_revers(30),aujourdhui_date)/1000)+" kg",# la consomation pendant le dernier moi
+                    "cons_aujourdhui":str(femalle.cons(age_revers(0),aujourdhui_date)/1000)+" kg",# la consomation aujourd'hui
+                    "coup_cons_moi":str((femalle.cons(age_revers(30),aujourdhui_date)*(int(GeneralConfig.objects.get(user=request.user).coup_alimentation)))/1000)+" dt",
+                    "coup_cons_aujourdhui":str((femalle.cons(age_revers(0),aujourdhui_date)/1000*(int(GeneralConfig.objects.get(user=request.user).coup_alimentation)))/1000)+" dt",
                 
-
-                #"MPDM":femalle.MPDM(),
-                #"TOPPDM":femalle.TOPPDM(),
-                #"BASPDM":femalle.BASPDM(),
-                "MPN":femalle.MPN(),
-                #"TOPPN":femalle.TOPPN(),
-                #"BASPN":femalle.BASPN(),
-                #"MPS":femalle.MPS(),
-                #"TOPPS":femalle.TOPPS(),
-                #"BASPS":femalle.BASPS(),
-
-                "cons_moi":str(femalle.cons(age_revers(30),aujourdhui_date)/1000)+" kg",# la consomation pendant le dernier moi
-                "cons_aujourdhui":str(femalle.cons(age_revers(0),aujourdhui_date)/1000)+" kg",# la consomation aujourd'hui
-                "coup_cons_moi":str((femalle.cons(age_revers(30),aujourdhui_date)*(int(GeneralConfig.objects.get(user=request.user).coup_alimentation)))/1000)+" dt",
-                "coup_cons_aujourdhui":str((femalle.cons(age_revers(0),aujourdhui_date)/1000*(int(GeneralConfig.objects.get(user=request.user).coup_alimentation)))/1000)+" dt",
-              
-                #'TPrp':female.TPrp(,['california']),
-                #'TPnetrp':female.TPnetrp(,['california']),
-                #'TMrp':female.TMrp(,['california']),
-                }              
+                    
+                    }
+                else :
+                    info= {
                 
+                    'TP':femalle.dernier_groupe_production().nb_lapins_nées,
+                    'TM':femalle.dernier_groupe_production().totale_mortalité_groupe(),
+                    'TMN':femalle.dernier_groupe_production().nb_lapins_mortes_naissances,
+                    'TPnet':femalle.dernier_groupe_production().nb_lapins_nées-femalle.dernier_groupe_production().totale_mortalité_groupe(),
+                    "dernière_groupe":groupeprod,
+                    
+    
+                    #"MPDM":femalle.dernier_groupe_production().moyenne_poid_groupe_dernier_mesure(),
+                    #"TOPPDM":femalle.dernier_groupe_production().TOPPDM(),
+                    #"BASPDM":femalle.dernier_groupe_production().BASPDM(),
+                    #"MPN":femalle.dernier_groupe_production(),
+                    #"TOPPN":femalle.dernier_groupe_production().TOPPN(),
+                    #"BASPN":femalle.dernier_groupe_production().BASPN(),
+                    #"MPS":femalle.dernier_groupe_production().moyenne_poid_groupe_souvrage(),
+                    #"TOPPS":femalle.dernier_groupe_production().TOPPS(),
+                    #"BASPS":femalle.dernier_groupe_production().BASP(),
 
+                    "cons_moi":str(femalle.cons(age_revers(30),aujourdhui_date)/1000)+" kg",# la consomation pendant le dernier moi
+                    "cons_aujourdhui":str(femalle.cons(age_revers(0),aujourdhui_date)/1000)+" kg",# la consomation aujourd'hui
+                    "coup_cons_moi":str((femalle.cons(age_revers(30),aujourdhui_date)*(int(GeneralConfig.objects.get(user=request.user).coup_alimentation)))/1000)+" dt",
+                    "coup_cons_aujourdhui":str((femalle.cons(age_revers(0),aujourdhui_date)/1000*(int(GeneralConfig.objects.get(user=request.user).coup_alimentation)))/1000)+" dt",
+                
+                    
+                    }   
                 femalle={
                         'id':femalle.id,
                         "race":femalle.race.race,
@@ -302,7 +309,6 @@ class FemalleVentPk(APIView):
             return Response(status=status.HTTP_404_NOT_FOUND)
         if  Femalle.objects.get(id=id).user==request.user:
                 #if femalle.state=='production': 
-                        print('test')
                         prix=request.data.get("prix")
                         date_vent=request.data.get("date_vent")
                         return femalle.vent(prix,date_vent)      
@@ -453,10 +459,10 @@ class AccouplementView(APIView):
                 })
         return Response(accs,status=status.HTTP_200_OK)
     def post(self,request):
-        femalle=Femalle.objects.get(cage=request.data["mère"])
+        femalle=Femalle.objects.get(id=request.data["mère"])
         user=request.user
-        malle=request.data["père"]
-        if  (femalle.est_acouplet == False and femalle.user==user and femalle.state == "production")  or femalle.id == acc.mère.id :
+        malle=Malle.objects.get(id=request.data["père"])
+        if  (femalle.est_acouplet() == False and femalle.user==user and femalle.state == "production") :# or femalle.id == acc.mère.id :
             if  (malle.user==user and malle.state == "production"):
                 if age(request.data["date_acouplage"])>=0 and age(request.data["date_acouplage"])<=3:
                     acouplement=Accouplement(num=Accouplement.num_vide(request.user),user=request.user,père=Malle.objects.get(id=request.data["père"]),mère=Femalle.objects.get(id=request.data["mère"]),date_acouplage=request.data["date_acouplage"],test="non_vérifié",state='avant_naissance')
@@ -618,13 +624,9 @@ class ProductionView(APIView):
                         "PS":lapin.poid_sevrage(),
                         "Poids":lapin.poid_lapin_list(),
                         "vaccin":lapin.vaccins(),
-                        "checked":False,# initialisation du var chec pour la js pour virifier les lapins choisies
+                        "checked":False,# initialisation du var checked pour la js pour virifier les lapins choisies (mort,vent ...)
                         })
-                MoyPS="y'a pas des mesure"
-                if groupe.date_souvrage!=None:   
-                    for poid in groupe.moyenne_poid_groupe_list():
-                        if poid['date']==age(groupe.date_naissance)-age(groupe.date_souvrage):
-                            MoyPS=int(poid['mesure'])
+                
                 vaccins=[]
                 for vaccin in VaccinLapin.objects.filter(user=request.user):
                     if vaccin.lapin.groupe==groupe:   
@@ -664,7 +666,7 @@ class ProductionView(APIView):
                     "date_acouplage":groupe.acouplement.date_acouplage,
                     "TM":groupe.totale_mortalité_groupe(),
                     
-                    "MoyPS":MoyPS,
+                    "MoyPS":groupe.moyenne_poid_souvrage(),
                     "MoyPN":groupe.moyenne_poid_groupe_naissance(),
                     "MoyPDM":groupe.moyenne_poid_groupe_dernier_mesure(),
                     "DateDMP":groupe.date_dernier_mesure(),

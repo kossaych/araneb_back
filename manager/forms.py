@@ -1,4 +1,4 @@
-from django import forms
+""" from django import forms
 from .models import*
 class MalleForm(forms.ModelForm):
     class Meta :
@@ -101,7 +101,7 @@ class FemalleVendue(forms.ModelForm):
             
 
         }        
-
+ """
 
 
 
