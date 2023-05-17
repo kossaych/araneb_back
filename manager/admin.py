@@ -16,4 +16,5 @@ admin.site.register(LapinProduction)
 admin.site.register(GroupeProduction)
 admin.site.register(Accouplement)
 admin.site.register(VaccinLapin)
+admin.site.register(CoupConsomation)
 

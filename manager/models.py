@@ -1,9 +1,7 @@
 from django.db import models
 from django.utils import timezone
 import uuid
-from manager.untils import*
 from accounts.models import Race,Maladie,User
-from accounts.models import User
 from django.db.models.signals import post_save
 from .untils import *
 import shutil
@@ -11,6 +9,8 @@ import os
 from pathlib import Path
 from rest_framework import status 
 from rest_framework.response import Response
+
+
 base_path=str(Path(__file__).resolve().parent.parent)
 base_path.replace(os.sep, '/')
 
@@ -59,7 +59,6 @@ class Lapin(models.Model):
             self.state='mort'
             self.save() 
             return Response(status=status.HTTP_202_ACCEPTED)
-
     def __str__(self):
             return str(self.cage)
     class Meta:
@@ -83,6 +82,28 @@ class Poid(models.Model):
     class Meta :
         abstract = True # Use this when the parent class contains common fields and the parent class table is not desirable.
 
+
+
+
+
+
+# pour enregister chaque changement de prix des aliments
+class PrixAliments(models.Model):
+    user=models.ForeignKey(User,on_delete=models.CASCADE,null=True ,blank=True)
+    date_changement=models.DateField(null=True,blank=True)
+    prix=models.IntegerField(null=True,blank=True)   
+    # retourner le dernier date de changement de prix des alimants anvant un date précie
+    @ classmethod
+    def le_plus_proche_date_a_gauche(cls,date,user):
+        coup_cons_choisie={}
+        for coup_cons in cls.objects.filter(user=user) :
+            if coup_cons_choisie=={}:
+                coup_cons_choisie=coup_cons
+            else:
+                if age(coup_cons.date_changement)>=age(date) and age(coup_cons.date_changement)-age(date)<age(coup_cons_choisie.date_changement)-age(date):
+                    coup_cons_choisie=coup_cons
+        return coup_cons_choisie
+            
 class Malle(Lapin):
     date_naissance=models.DateField(default=timezone.now) 
     @classmethod
@@ -116,7 +137,7 @@ class Femalle(Lapin):
                     return 'F'+str(cage)
         max=len(cls.objects.filter(user=user))
         return 'F'+str(max+1)
-
+    
     def dernier_groupe_production(self):
             date=""
             dernier_groupe={}
@@ -132,18 +153,8 @@ class Femalle(Lapin):
                 return False # False sig que la femalle n"a pas encore des groupe
             else :
                 return dernier_groupe  
-    ##################################################################################################
-    ################# consomation ################################
-    # le totale de consomation d'une femalle dans les 30 dernière jours
-    def Cons(self):
-                totale=0
-                for cons in self.ConsFemalle.objects.all():
-                    if cons.femalle.id == self:
-                        if age(str(cons.date_mesure))<=32:
-                            totale=totale+cons.valeur
-                return totale
-    #################################################################################################
-    # retourner True si la femalle est nourice dans un jour précie sinon False
+     # retourner True si la femalle est nourice dans un jour précie sinon False
+    # virifier si la femalle nourice ou nom  return bool
     def nourice(self,date_jour) :  
         for groupe in GroupeProduction.objects.all():
             if groupe.acouplement.mère.id==self:
@@ -151,7 +162,7 @@ class Femalle(Lapin):
                     if age(groupe.date_naissance)-age(date_jour)>=0: # le calcule basé sur la diférence des jour entre le date de naissance et le date précie 
                         return True
                 else :
-                    if age(groupe.date_souvrage)-age(date_jour)<0 and age(groupe.date_naissance)-age(date_jour)>=0: # le calcule basé sur la diférence des jour entre le date de naissance et le date précie     
+                    if age(groupe.date_souvrage)-age(date_jour) < 0 and age(groupe.date_naissance)-age(date_jour)>=0: # le calcule basé sur la diférence des jour entre le date de naissance et le date précie     
                         return True
 
         return False
@@ -172,11 +183,10 @@ class Femalle(Lapin):
 
             return False
         return False    
-
     #retourner le totale de consomation pandent la periode de date initiale jusqu'a le date finale
     def cons(self,initial_date,final_date):
         cons=0
-        if (age(final_date)-age(initial_date))<=0 and 90>=age(final_date)>=0:
+        if (age(final_date)-age(initial_date))<=0 and age(final_date)>=0:
             for jour in list_dates(initial_date,final_date):
                 if self.enceinte(jour) and self.nourice(jour) :
                     cons=cons+500
@@ -187,6 +197,7 @@ class Femalle(Lapin):
                 else:
                     cons=cons+150
         return cons
+    
     def mesures_poids(self):
         poids=[]
         poids.clear()
@@ -199,53 +210,31 @@ class Femalle(Lapin):
                                 }
                                 )   
         return poids     
-    def __str__(self):
-            return str(self.cage)
-        # verifier si une femalle est acouplet ou non 
+
     def est_acouplet(self):
             for acc in Accouplement.objects.filter(mère=self,state="avant_naissance"):
                 if (age(acc.date_acouplage)<=35 and (acc.test=="enceinte" or acc.test=="non_vérifié")):
                     return True
             return False
+    
+    def __str__(self):
+            return str(self.cage)
+        # verifier si une femalle est acouplet ou non 
+    
 class VaccinMalle(Vaccin):
     malle=models.ForeignKey(Malle,on_delete=models.CASCADE ,null=True , blank=True)
+
 class VaccinFemalle(Vaccin):
     femalle=models.ForeignKey(Femalle,on_delete=models.CASCADE ,null=True , blank=True)
-
-class FemalleStatistique(models.Model):
-    date_debut=models.DateField(null=True,blank=True)
-    date_fin=models.DateField(null=True,blank=True)
-    femalle=models.DateField(null=True,blank=True)
-    #infos
-    TP=models.IntegerField(null=True,blank=True)
-    TM=models.IntegerField(null=True,blank=True)
-    TMN=models.IntegerField(null=True,blank=True)
-    TPnet=models.IntegerField(null=True,blank=True)
-    TPf=models.IntegerField(null=True,blank=True)
-    TMf=models.IntegerField(null=True,blank=True)
-    TPnetf=models.IntegerField(null=True,blank=True)
-    TPm=models.IntegerField(null=True,blank=True)
-    TMm=models.IntegerField(null=True,blank=True)
-    TPnetm=models.IntegerField(null=True,blank=True)
-    TV=models.IntegerField(null=True,blank=True)
-    TVm=models.IntegerField(null=True,blank=True)
-    TVf=models.IntegerField(null=True,blank=True)
-    grandprix=models.IntegerField(null=True,blank=True)
-    basprix=models.IntegerField(null=True,blank=True)
-    moyprix=models.DecimalField(max_digits=20, decimal_places=4,null=True,blank=True)
-    MPN=models.DecimalField(max_digits=20, decimal_places=4,null=True,blank=True)
-    MPS=models.DecimalField(max_digits=20, decimal_places=4,null=True,blank=True)
-    TOPPS=models.IntegerField(null=True,blank=True)
-    BASPS=models.IntegerField(null=True,blank=True)
-    TOPPN=models.IntegerField(null=True,blank=True)
-    BASPN=models.IntegerField(null=True,blank=True)
-    cons=models.IntegerField(null=True,blank=True)
 
 class PoidMalle(Poid):
     malle=models.ForeignKey(Malle,on_delete=models.CASCADE ,null=True , blank=True)
 
 class PoidFemalle(Poid):
     femalle=models.ForeignKey(Femalle,on_delete=models.CASCADE ,null=True , blank=True)
+
+
+
 #production     
 class Accouplement(models.Model):
     TEST_ACOUPLAGE =[
@@ -284,6 +273,7 @@ class Accouplement(models.Model):
             if int(acc.num[1:])>max:
                 max=int(acc.num[1:])
         return 'A'+str(max+1)        
+    
     def __str__(self):
         return str(self.num)
     # virifier si un accouplement a déja utilisé ou non return bool 
@@ -331,14 +321,17 @@ class GroupeProduction(models.Model):
                 if groupe.id == id :
                     return True
             return False  """
+        
+        
         # totale des lapins morte dans le groupe
         def totale_mortalité_groupe(self):
-            nb=0
-            for lapin in LapinProduction.objects.filter(groupe=self.id):
-                if lapin.state=="mort":
-                        nb=nb+1
-            return nb
-        # moyenne des poids des lapins des productions d'un groupe a la naissance
+           return LapinProduction.objects.filter(groupe=self.id,state='mort').all()
+                
+            
+   
+   
+   
+        # moyenne des poids des lapins des productions d'un groupe a la naissance  
         def moyenne_poid_groupe_naissance(self):
             moy=0
             nb=0
@@ -412,6 +405,9 @@ class GroupeProduction(models.Model):
                             })
 
                     return moyenne_poids   
+        
+        
+        
         #nombre des malles ou des femalles dans le groupe 
         def nombre_malle_groupe(self):
                     nb=0
@@ -425,6 +421,11 @@ class GroupeProduction(models.Model):
                         if lapin.sex=="femalle":
                                 nb=nb+1
                     return nb   
+        
+        
+        
+        
+        
         # calculer le taux des consomation du groupe entre deux date
         def cons_totale(self,initial_date,final_date):
             totale=0
@@ -437,15 +438,64 @@ class GroupeProduction(models.Model):
                             nb_lapin-=1
                 if age(GroupeProduction.objects.get(id=self.id).date_naissance)-age(date)<25:
                     totale+=(0*nb_lapin)
-                elif(age(GroupeProduction.objects.get(id=self.id).date_naissance)-age(date))< 30:
+                elif(age(GroupeProduction.objects.get(id=self.id).date_naissance)-age(date))<30:
                     totale+=(5*nb_lapin)
-                elif(age(GroupeProduction.objects.get(id=self.id).date_naissance)-age(date))< 44:
+                elif(age(GroupeProduction.objects.get(id=self.id).date_naissance)-age(date))<44:
                     totale+=(50*nb_lapin)
                 elif(age(GroupeProduction.objects.get(id=self.id).date_naissance)-age(date))< 59:
-                    totale+=(100*nb_lapin)   
+                    totale+=(100*nb_lapin)
                 elif(age(GroupeProduction.objects.get(id=self.id).date_naissance)-age(date))> 60:
                     totale+=(150*nb_lapin)
             return totale                    
+        # retourner une liste de consomation avec sa date
+        def cons_totale_list(self,initial_date,final_date):
+            totale=[]
+            for date in list_dates(str(initial_date),str(final_date)):# pd.date_range(end=final_date,start=initial_date).tolist() :
+                nb_lapin=GroupeProduction.objects.get(id=self.id).nb_lapins_nées
+                # pour eleminer les lapins mortes avant ce date
+                for lapin in LapinProduction.objects.filter(groupe=self.id):
+                    if lapin.state=='mort':
+                        if age(lapin.date_mort)>=age(date):
+                            nb_lapin-=1
+                if age(GroupeProduction.objects.get(id=self.id).date_naissance)-age(date)<25:
+                    totale.append({'cons':0*nb_lapin,'date':str(date)})
+                elif(age(GroupeProduction.objects.get(id=self.id).date_naissance)-age(date))< 30:
+                    totale.append({'cons':5*nb_lapin,'date':str(date)})
+                elif(age(GroupeProduction.objects.get(id=self.id).date_naissance)-age(date))< 44:
+                    totale.append({'cons':50*nb_lapin,'date':str(date)})
+                elif(age(GroupeProduction.objects.get(id=self.id).date_naissance)-age(date))< 59:
+                    totale.append({'cons':100*nb_lapin,'date':str(date)})   
+                elif(age(GroupeProduction.objects.get(id=self.id).date_naissance)-age(date))> 60:
+                    totale.append({'cons':150*nb_lapin,'date':str(date)})
+            return totale 
+        # calculer le coup de consomation
+        def coup_cons(self,initial_date,final_date,user):
+            totale_coup_cons=0
+            for cons in self.cons_totale_list(initial_date,final_date):# pd.date_range(end=final_date,start=initial_date).tolist() :
+                #if PrixAliments.le_plus_proche_date_a_gauche(cons['date'],user)!={} :
+                    nb_lapin=GroupeProduction.objects.get(id=self.id).nb_lapins_nées
+                    # pour eleminer les lapins mortes avant ce date
+                    for lapin in LapinProduction.objects.filter(groupe=self.id):
+                        if lapin.state=='mort':
+                            if age(lapin.date_mort)>=age(cons['date']):
+                                nb_lapin-=1
+                    if age(GroupeProduction.objects.get(id=self.id).date_naissance)-age(cons['date'])<25:
+                        totale_coup_cons+=(0*nb_lapin)*PrixAliments.le_plus_proche_date_a_gauche(cons['date'],user).coup
+                    elif(age(GroupeProduction.objects.get(id=self.id).date_naissance)-age(cons['date']))< 30:
+                        totale_coup_cons+=(5*nb_lapin)*PrixAliments.le_plus_proche_date_a_gauche(cons['date'],user).coup
+                    elif(age(GroupeProduction.objects.get(id=self.id).date_naissance)-age(cons['date']))< 44:
+                        totale_coup_cons+=(50*nb_lapin)*PrixAliments.le_plus_proche_date_a_gauche(cons['date'],user).coup
+                    elif(age(GroupeProduction.objects.get(id=self.id).date_naissance)-age(cons['date']))< 59:
+                        totale_coup_cons+=(100*nb_lapin)*PrixAliments.le_plus_proche_date_a_gauche(cons['date'],user).coup   
+                    elif(age(GroupeProduction.objects.get(id=self.id).date_naissance)-age(cons['date']))> 60:
+                        totale_coup_cons+=(150*nb_lapin)*PrixAliments.le_plus_proche_date_a_gauche(cons['date'],user).coup
+                
+            
+            return  totale_coup_cons /1000
+
+
+
+
         # calculer le moyenne des poid des lapins du groupe au sevrage
         def moyenne_poid_souvrage(self):
             moy=0
@@ -459,6 +509,10 @@ class GroupeProduction(models.Model):
                 return int(moy/nb) 
             else:
                 return "y'a pas des mesures"
+        
+        
+        
+        
         ###################////////// les statistiques des vent //////////////////###########
         # return le nombre des lapins vendues  pandant ce mois
         def totale_vent(self):
@@ -519,6 +573,10 @@ class GroupeProduction(models.Model):
             if self.TV() !=0 :
                 return self.totaleprix(self)/self.TV() 
             return 0                        
+      
+      
+      
+      
         # le plus grand poid des poids du dernière groupe du production a la naissance
         def TOPPN(self):
                     max=0
@@ -578,12 +636,41 @@ class GroupeProduction(models.Model):
                     if min == '' :return 0
                     return min      
 
+
+
+
+
         def __str__(self):
             return str(self.cage)     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class LapinProduction(Lapin):
     groupe=models.ForeignKey(GroupeProduction,on_delete=models.CASCADE,default=1)
     sex=models.CharField(max_length=50, default='non verifier',choices=[("femalle","femalle"),("malle","malle"),('non verifier','non verifier')])  
+    def delete_(self):
+        self.delete()
+        groupe=self.groupe
+        groupe.nb_lapins_nées-=1
+        groupe.save()
     #le poid  du lapin  a la naissance
     def poid_naissance(self):
             for poid in PoidLapinProduction.objects.all():

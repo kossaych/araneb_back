@@ -26,7 +26,8 @@ class Maladie(models.Model):
     ]
     maladie=models.CharField(max_length=200,default='____')
     type=models.CharField(choices=TYPES_MALADIES_LAPINS,max_length=200,default='__')
-    
+    def __str__(self):
+        return str(self.maladie)
 class GeneralConfig(models.Model):
     user=models.ForeignKey(User,on_delete=models.CASCADE)
     DEVISE_LIST=(('din tun','din tun'),('din alg','din alg'))

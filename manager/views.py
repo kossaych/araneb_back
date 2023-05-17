@@ -49,7 +49,7 @@ class FemalleView(APIView):
                 user=request.user
                 try :
                     femalle=Femalle.objects.create(img=request.data['file'],race=Race.objects.get(race=request.data["race"]),date_naissance=request.data["date_naissance"],cage=Femalle.cage_vide(user),user=user)
-                except:
+                except :
                      return Response('invalid data',status=status.HTTP_400_BAD_REQUEST)
                 femalle.save()
                 try :
@@ -63,7 +63,7 @@ class FemalleView(APIView):
                     femalle.delete_()
                     return Response('choisir une image',status=status.HTTP_400_BAD_REQUEST)
                 return Response(status=status.HTTP_201_CREATED)
-        return Response("ladate de naissance invalide",status=status.HTTP_400_BAD_REQUEST)
+        return Response("le date de naissance invalide",status=status.HTTP_400_BAD_REQUEST)
 
 class MalleView(APIView):
     authentication_classes = [TokenAuthentication]
@@ -104,7 +104,6 @@ class MalleView(APIView):
                     return Response('choisir une image',status=status.HTTP_400_BAD_REQUEST)
                 return Response(status=status.HTTP_201_CREATED)
             else:return Response("date de naissance invalide",status=status.HTTP_400_BAD_REQUEST)
-
 
 class FemalleViewPk(APIView):
     authentication_classes = [TokenAuthentication]
@@ -360,8 +359,7 @@ class FemalleMortPk(APIView):
                         return femalle.mort(date_mort)
                 else:return Response(status=status.HTTP_400_BAD_REQUEST) 
         else:return Response(status=status.HTTP_401_UNAUTHORIZED)        
-       
-     
+         
 # return un cage vide pour la criation d'une nouvelle femalle 
 class CageVideFemalle(APIView):
     authentication_classes = [TokenAuthentication]
@@ -523,14 +521,14 @@ class AccouplementStateChangeView(APIView):
     def put(self,request,id):
         if Accouplement.objects.get(id=id).user==request.user:
             acc=Accouplement.objects.get(id=id)
-            if age(acc.date_acouplage)<=32:
+            if age(acc.date_acouplage)<=35:
                     if age(acc.date_acouplage)>=27 and acc.test=='enciente':
                         acc.state=request.data.get("state")
                         acc.save() 
                         return Response('naissance enregistrer',status=status.HTTP_200_OK)
                     else:
                         return Response('test enregistrer',status=status.HTTP_200_OK)
-            return Response("tu peut pas changer ces informations après 31 jour de date d'acouplage",status=status.HTTP_400_BAD_REQUEST)
+            return Response("tu peut pas changer ces informations après 35 jour de date d'acouplage",status=status.HTTP_400_BAD_REQUEST)
         return Response(status=status.HTTP_404_NOT_FOUND)                
 
 class AccouplementChangeTestView(APIView):
@@ -540,16 +538,16 @@ class AccouplementChangeTestView(APIView):
             if Accouplement.objects.get(id=id):
                 if Accouplement.objects.get(id=id).user==request.user:
                     acc=Accouplement.objects.get(id=id)
-                    if age(acc.date_acouplage)<=32:
+                    if age(acc.date_acouplage)<=35:
                             if age(acc.date_acouplage)>=9: 
                                 if request.data.get("date_test") != "" and request.data.get("date_test") != "null" and (age(request.data.get("date_test"))>=32 or age(request.data.get("date_test"))>=0) and (request.data.get("test")=="enceinte" or request.data.get("test")=="pas enceinte"):
                                     acc.date_test=request.data.get("date_test")
                                     acc.test=request.data.get("test")
                                     acc.save()
                                     return Response(status=status.HTTP_200_OK)    
-                                return Response("date invalide",status=status.HTTP_400_BAD_REQUEST)
+                                return Response("invalid data",status=status.HTTP_400_BAD_REQUEST)
                             return Response("tu peut pas faire un test de grossese avant 9 jour d'acouplage",status=status.HTTP_400_BAD_REQUEST)
-                    else:return Response("tu peut pas changer ces informations après 32 jour de date d'acouplage",status=status.HTTP_400_BAD_REQUEST)
+                    else:return Response("tu peut pas changer ces informations après 35 jour de date d'acouplage",status=status.HTTP_400_BAD_REQUEST)
                 return Response(status=status.HTTP_404_NOT_FOUND)               
             return Response(status=status.HTTP_404_NOT_FOUND)               
 
@@ -558,14 +556,14 @@ class AccouplementFauseCoucheView(APIView):
             if Accouplement.objects.get(id=id):
                 if Accouplement.objects.get(id=id).user==request.user:
                     acc=Accouplement.objects.get(id=id)
-                    if age(acc.date_acouplage)<=32:
+                    if age(acc.date_acouplage)<=35:
                                 if request.data.get("date_test") != "" and request.data.get("date_test") != "null" and age(request.data.get("date_test"))>=0 and age(acc.date_acouplage)-age(request.data.get("date_test"))>=0:
                                     acc.date_test=request.data.get("date_test")
                                     acc.test="fausse-couche"
                                     acc.save()
                                     return Response(status=status.HTTP_200_OK)    
                                 return Response("date invalide",status=status.HTTP_400_BAD_REQUEST)
-                    else:return Response("tu peut pas changer ces informations après 32 jour de date d'acouplage",status=status.HTTP_400_BAD_REQUEST)
+                    else:return Response("tu peut pas changer ces informations après 35 jour de date d'acouplage",status=status.HTTP_400_BAD_REQUEST)
                 return Response(status=status.HTTP_404_NOT_FOUND)               
             return Response(status=status.HTTP_404_NOT_FOUND)               
 
@@ -613,11 +611,12 @@ class ProductionView(APIView):
                 lapins=[]
                 lapins.clear()
                 for lapin in LapinProduction.objects.filter(groupe=groupe,state="production"):
+                    race = str(lapin.race)
                     lapins.append(
                         {
                         'id':lapin.id,
                         "sex":lapin.sex,
-                        "race":lapin.race,
+                        "race":race,
                         "cage":lapin.cage,
                         "PN":lapin.poid_naissance(),#poid a la naissance 
                         "PDM":lapin.poid_dernier_mesure(),#poid la dernière mesure
@@ -676,10 +675,12 @@ class ProductionView(APIView):
 
                     "cons":groupe.cons_totale(groupe.date_naissance,aujourdhui_date)/1000,
                     "cons_auj":groupe.cons_totale(aujourdhui_date,aujourdhui_date)/1000,
-                   
-                    "coup_cons":str((groupe.cons_totale(age_revers(30),aujourdhui_date)/1000*(int(GeneralConfig.objects.get(user=request.user).coup_alimentation)))/1000),
-                    "coup_cons_auj":str((groupe.cons_totale(age_revers(0),aujourdhui_date)/1000*(int(GeneralConfig.objects.get(user=request.user).coup_alimentation)))/1000),
-              
+                    
+                    #"coup_cons":str((groupe.cons_totale(age_revers(30),aujourdhui_date)/1000*(int(GeneralConfig.objects.get(user=request.user).coup_alimentation)))),
+                    #"coup_cons_auj":str((groupe.cons_totale(age_revers(0),aujourdhui_date)/1000*(int(GeneralConfig.objects.get(user=request.user).coup_alimentation)))),
+                    
+                    "coup_cons":groupe.coup_cons(groupe.date_naissance,aujourdhui_date,request.user),
+
                     "vaccins":vaccins,
 
 
@@ -720,8 +721,8 @@ class ProductionViewPk(APIView):
                 nb_ln=request.data["nb_lapins_nées"]
                 nb_lmn=request.data["nb_lapins_mortes"]
                 if 2>age(date_naissance)>=0 and age(accouplement.date_acouplage)-age(date_naissance)>=27 and 20>=int(nb_ln)>=int(nb_lmn)>=0 and int(nb_ln)>0 :
-                        new_groupe=GroupeProduction.objects.create(cage=groupe.cage,acouplement=accouplement,date_naissance=date_naissance,nb_lapins_nées=nb_ln ,nb_lapins_mortes_naissances=nb_lmn,user=request.user)
                         groupe.delete()
+                        new_groupe=GroupeProduction.objects.create(cage=groupe.cage,acouplement=groupe.acouplement,date_naissance=date_naissance,nb_lapins_nées=nb_ln ,nb_lapins_mortes_naissances=nb_lmn,user=request.user)
                         new_groupe.save() 
                         return Response(status=status.HTTP_202_ACCEPTED)
                 return Response("invalid data",status=status.HTTP_400_BAD_REQUEST)    
@@ -738,7 +739,7 @@ class ProductionViewPk(APIView):
                     {
                     "id":lapin.id,
                     "sex":lapin.sex,
-                    "race":lapin.race,
+                    "race":str(lapin.race),
                     "cage":lapin.cage,
                     "date_mort":lapin.date_mort,
                     "prix":lapin.prix,
@@ -833,9 +834,15 @@ class PoidLapinProductionsView(APIView):
             for i in range(1,len(valeurs)):
                 valeur=valeurs[i]['mesure']
                 lapin=LapinProduction.objects.get(id=valeurs[i]['id'])
-                if lapin.user == user and 0 <= int(valeurs[i]['mesure']) <= 5000 : 
-                    poid=PoidLapinProduction(lapin=lapin,valeur=valeur,date_mesure=date)
-                    poid.save()
+                if lapin.user == user and 0 <= int(valeurs[i]['mesure']) <= 5000 :
+                    try :
+                        old_poid=PoidLapinProduction.objects.get(lapin=lapin,date_mesure=date)
+                        old_poid.date_mesure=date
+                        old_poid.valeur=valeur
+                        old_poid.save()
+                    except:
+                        poid=PoidLapinProduction(lapin=lapin,valeur=valeur,date_mesure=date)
+                        poid.save()
                 else:return  Response('la mesure du lapin'+str(LapinProduction.objects.get(id=valeurs[i]['id']).cage) +'doit etre compris entre 0 et 5000',status=status.HTTP_400_BAD_REQUEST)    
             return Response(status=status.HTTP_200_OK)    
                     
@@ -848,12 +855,14 @@ class VaccinProductionsView(APIView):
         if LapinProduction.objects.get(id=int(request.data['lapins'][0])).user==request.user :
             if age(LapinProduction.objects.get(id=int(request.data['lapins'][0])).groupe.date_naissance)>=age(request.data['date_vaccin'])>=0:
                 for lapin in request.data['lapins']:
-                    vaccin=VaccinLapin(user=request.user,lapin=LapinProduction.objects.get(id=int(lapin)),date_vaccin=request.data['date_vaccin'],nom=request.data['nom_vaccin'],prix=request.data["prix_vaccin"],maladie=request.data["maladie_vaccin"])
+                    try :
+                        vaccin=VaccinLapin(user=request.user,lapin=LapinProduction.objects.get(id=int(lapin)),date_vaccin=request.data['date_vaccin'],nom=request.data['nom_vaccin'],prix=request.data["prix_vaccin"],maladie=Maladie.objects.get(maladie=request.data["maladie_vaccin"]))
+                    except:
+                        return  Response("maladie n'est pas enregestrer ",status=status.HTTP_400_BAD_REQUEST)        
                     vaccin.save()
                 return Response(status=status.HTTP_200_OK)   
             return Response('invalid date',status=status.HTTP_400_BAD_REQUEST)        
         return Response(status=status.HTTP_400_BAD_REQUEST)    
-
 
 class LapinProductionView(APIView):
     authentication_classes = [TokenAuthentication]
@@ -879,8 +888,14 @@ class LapinProductionViewPk(APIView):
     def put(self,request,id):
         if self.virif_lap(id,request.user):
             lap=LapinProduction.objects.get(id=id)
-            lap.race=request.data['race']
-            lap.sex=request.data['sex']
+            try :
+                lap.race=Race.objects.get(race=request.data['race'])
+            except:
+                return Response('invalid race',status=status.HTTP_400_BAD_REQUEST)
+            try :
+                lap.sex=request.data['sex']
+            except:
+                return Response('invalid sex',status=status.HTTP_400_BAD_REQUEST)
             lap.save()
             return Response(status=status.HTTP_202_ACCEPTED)
         return Response(status=status.HTTP_404_NOT_FOUND)
@@ -896,10 +911,89 @@ class LapinProductionViewPk(APIView):
         return Response(status=status.HTTP_404_NOT_FOUND)    
     def delete(self,request,id):
         if self.virif_lap(id,request.user):
-            lap=LapinProduction.objects.get(id=id)
-            lap.delete()
+            LapinProduction.objects.get(id=id).delete_()
             return Response(status= status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_404_NOT_FOUND)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ######################"old views"#############################################
 #"**************CBV **********
@@ -908,8 +1002,8 @@ class ProductionList(ListView):
     template_name = 'managment/production/production.html'
     def get_queryset(self):
         return GroupeProduction.objects.filter(user=self.request.user)
-    
-  
+
+
     def get_context_data(self, **kwargs):
         info=[]
         info.clear()
@@ -938,7 +1032,7 @@ class GroupeProductionCreate(LoginRequiredMixin,View):
         for groupe in GroupeProduction.objects.filter(user=self.request.user):
                     if cage == int((groupe.cage)[1:]):
                         return True
-        return False                
+        return False
     def cage_vide (self):
         for i in range(1,len(GroupeProduction.objects.filter(user=self.request.user))+1):
                 if not self.virif_cage(i):
@@ -947,7 +1041,7 @@ class GroupeProductionCreate(LoginRequiredMixin,View):
         for groupe in GroupeProduction.objects.filter(user=self.request.user):
             if int(groupe.cage[1:])>max:
                 max=int(groupe.cage[1:])
-        return 'G'+str(max+1)        
+        return 'G'+str(max+1)
 
 
         return  'G'+str(i)
@@ -956,7 +1050,7 @@ class GroupeProductionCreate(LoginRequiredMixin,View):
         acouplements=Accouplement.objects.filter(user=self.request.user)
         return render(request,'managment/production/add_groupe_production.html',{'form':GroupeProductionForm,'cage':self.cage_vide(),"acouplements":acouplements,})
     def get(self,request):
-        return self.render(request)                    
+        return self.render(request)
     def post(self,request):
         form=GroupeProductionForm(request.POST,request.FILES)
         if form.is_valid():
@@ -976,7 +1070,7 @@ class AcouplementCreate(LoginRequiredMixin,View):
         for groupe in Accouplement.objects.filter(user=self.request.user):
                     if num == int((groupe.num)[1:]):
                         return True
-        return False                
+        return False
     def num_vide (self):
         for i in range(1,len(Accouplement.objects.filter(user=self.request.user))+1):
                 if not self.virif_num(i):
@@ -985,7 +1079,7 @@ class AcouplementCreate(LoginRequiredMixin,View):
         for groupe in Accouplement.objects.filter(user=self.request.user):
             if int(groupe.num[1:])>max:
                 max=int(groupe.num[1:])
-        return 'A'+str(max+1)        
+        return 'A'+str(max+1)
 
 
         return  'A'+str(i)
@@ -993,11 +1087,11 @@ class AcouplementCreate(LoginRequiredMixin,View):
         form=AccouplementForm
         malles=Malle.objects.filter(user=request.user,state='production')
         femalles=Femalle.objects.filter(user=request.user,state='production')
-        
+
         return render(request,'managment/production/add_accouplement.html',{'form':AccouplementForm,'num':self.num_vide(),'malles':malles,'femalles':femalles})
     def get(self,request):
-        return self.render(request)     
-               
+        return self.render(request)
+
     def post(self,request):
         form=AccouplementForm(request.POST,request.FILES)
         if form.is_valid():
@@ -1013,23 +1107,23 @@ class AcouplementCreate(LoginRequiredMixin,View):
 #########################################################
 
 # *****FBV*******************
-@login_required    
+@login_required
 def femalle_create(request):
     if request.method=='POST':
             form=FemalleForm(request.POST,request.FILES)
             if form.is_valid() :
                         instance=form.save(commit=False)
                         instance.user=request.user
-                        
+
                         instance.save()
                         return redirect('femalle')
-                            
+
     context={
-            
+
             'form':FemalleForm,
-            
-        }      
-    return render(request,'managment/parents/add_femalle.html',context)           
+
+        }
+    return render(request,'managment/parents/add_femalle.html',context)
 
 @login_required
 def femalle_update(request,id):
@@ -1040,13 +1134,13 @@ def femalle_update(request,id):
             form.save()
             return redirect('femalle')
     elif femalle.user==request.user :
-        form=FemalleForm(instance=femalle)   
+        form=FemalleForm(instance=femalle)
     if femalle.user==request.user:
             context ={
                 'form':form,
             }
     else :
-        return redirect('femalle')                 
+        return redirect('femalle')
     return render(request,"managment/parents/update_femalle.html",context)
 
 @login_required
@@ -1059,7 +1153,7 @@ def femalle_morte(request,id):
             form=form.save(commit=False)
             form.state='mort'
             form.save()
-            return redirect('femalle') 
+            return redirect('femalle')
     info={}
     for lapin in Malle.objects.filter(user=user,state='production',id=femalle.id):
             info={
@@ -1070,10 +1164,10 @@ def femalle_morte(request,id):
         context={
             'form':FemalleMorte,
             'id':id
-       
+
         }
     else:
-        return redirect('femalle')                 
+        return redirect('femalle')
     return render(request,'managment/parents/femalle_morte.html',context)
 @login_required
 def femalle_vendue(request,id):
@@ -1086,20 +1180,20 @@ def femalle_vendue(request,id):
             form=form.save(commit=False)
             form.state='mort'
             form.save()
-            return redirect('femalle')        
+            return redirect('femalle')
     info={}
     for lapin in Femalle.objects.filter(user=user,state='production',id=femalle.id):
             info={
             'age':age(lapin.date_naissance),
             'id':lapin.id,
-            }        
+            }
     if femalle.user==request.user :
         context={
             "msg":msg,
             'form':FemalleVendue,
             'id':id,
             'info':info,
-        }         
+        }
     else:
         return redirect('femalle')
 
@@ -1115,21 +1209,21 @@ def malle_morte(request,id):
             form=malle_save.save(commit=False)
             form.state='mort'
             form.save()
-            return redirect('malle') 
+            return redirect('malle')
     info={}
     for lapin in Malle.objects.filter(user=user,state='production',id=malle.id):
             info={
             'age':age(lapin.date_naissance),
             'id':lapin.id,
-            }        
+            }
     if malle.user==request.user:
         context={
             'form':MalleMorte,
             'id':id
-       
+
         }
     else:
-        return redirect('malle')                 
+        return redirect('malle')
     return render(request,'managment/parents/malle_morte.html',context)
 @login_required
 def malle_vendue(request,id):
@@ -1141,19 +1235,19 @@ def malle_vendue(request,id):
             form=malle_save.save(commit=False)
             form.state='mort'
             form.save()
-            return redirect('malle') 
+            return redirect('malle')
     info={}
     for lapin in Malle.objects.filter(user=user,state='production',id=malle.id):
             info={
             'age':age(lapin.date_naissance),
             'id':lapin.id,
-            }       
+            }
     if malle.user==request.user :
         context={
             'form':MalleVendue,
             'id':id,
             'info':info
-        }         
+        }
     else:
         return redirect('malle')
 
@@ -1165,7 +1259,7 @@ def femalle_details(request,id):
     user=request.user
     # des fonctions du calcule pour calculer la prodectiviter d'une femalle
     #TP : totale production d'une femalle dans ce mois retourner le nombre des lapin produite par cette femalle ce mois
-    #TPnet :totale production d'une femalle dans ce mois à l'exclusion des lapins mortes retourner le nombre des lapin produite par cette femalle ce mois à l'exclusion des lapin mortes 
+    #TPnet :totale production d'une femalle dans ce mois à l'exclusion des lapins mortes retourner le nombre des lapin produite par cette femalle ce mois à l'exclusion des lapin mortes
     #TP : totale des lapins mortes d'une femalle dans ce mois retourner le nombre des lapin mortes produite par cette femalle ce mois
     # en Formant f , m ou rp a la fin de ces noms pour dit que ces calcule sont fais pour une caterorie f : categorie des lapine m:categorie des malles et rp : categorie des lapin race pure 'californiaire'
     def TP(idparent):
@@ -1175,13 +1269,13 @@ def femalle_details(request,id):
                     for lapin in LapinProduction.objects.all():
                         if lapin.groupe.id == groupe.id  :
                             nb=nb+1
-            return nb                
+            return nb
     def TM(idparent):
             nb=0
-            for groupe in GroupeProduction.objects.all():                    
+            for groupe in GroupeProduction.objects.all():
                     if idparent==groupe.acouplement.mère.id :
                             for lapin in LapinProduction.objects.all():
-                                        
+
                                         if lapin.groupe.id == groupe.id  and lapin.state=='mort':
                                             nb=nb+1
             return nb
@@ -1197,10 +1291,10 @@ def femalle_details(request,id):
             return nb
     def TMm(idparent):
             nb=0
-            for groupe in GroupeProduction.objects.all():                    
+            for groupe in GroupeProduction.objects.all():
                     if idparent==groupe.acouplement.mère.id :
                             for lapin in LapinProduction.objects.all():
-                                        
+
                                         if lapin.groupe.id == groupe.id  and lapin.state=='mort' and lapin.sex=="malle":
                                             nb=nb+1
             return nb
@@ -1209,19 +1303,19 @@ def femalle_details(request,id):
     def TPf(idparent):
             nb=0
             for groupe in GroupeProduction.objects.all():
-                
+
                 if idparent==groupe.acouplement.mère.id :
                     for lapin in LapinProduction.objects.all():
-                        
+
                         if lapin.groupe.id == groupe.id  and lapin.sex=='femalle':
                             nb=nb+1
             return nb
     def TMf(idparent):
             nb=0
-            for groupe in GroupeProduction.objects.all():                    
+            for groupe in GroupeProduction.objects.all():
                     if idparent==groupe.acouplement.mère.id :
                             for lapin in LapinProduction.objects.all():
-                                        
+
                                         if lapin.groupe.id == groupe.id  and lapin.state=='mort' and lapin.sex=="femalle":
                                             nb=nb+1
             return nb
@@ -1230,25 +1324,25 @@ def femalle_details(request,id):
     def TPrp(idparent):
             nb=0
             for groupe in GroupeProduction.objects.all():
-                
+
                 if idparent==groupe.acouplement.mère.id :
                     for lapin in LapinProduction.objects.all():
-                        
+
                         if lapin.groupe.id == groupe.id  and lapin.race=="californiaire":
                             nb=nb+1
             return nb
     def TMrp(idparent):
             nb=0
-            for groupe in GroupeProduction.objects.all():                    
+            for groupe in GroupeProduction.objects.all():
                     if idparent==groupe.acouplement.mère.id :
                             for lapin in LapinProduction.objects.all():
-                                        
+
                                         if lapin.groupe.id == groupe.id  and lapin.state=='mort' and lapin.race=="californiaire":
                                             nb=nb+1
             return nb
     def TPnetrp(idparent):
             return TPrp(idparent)-TMrp(idparent)
-   
+
     if user == femalle.user:
         info={
                 'TPm':TPm(femalle.id),
@@ -1264,10 +1358,10 @@ def femalle_details(request,id):
         context={
                      'femalle':femalle,
                      'infos':info,
-            
+
                     }
     else:
-        return redirect('malle')         
+        return redirect('malle')
     return render(request,'managment/parents/details_femalle.html',context)
 
 # => *****CBV*****
@@ -1291,23 +1385,23 @@ class MalleList(View):
                 'nombre_malles_morts':Malle.objects.filter(user=user,state='mort').count(),
                 'nombre_malles_vendus':Malle.objects.filter(user=user,state='vendue').count(),
                 'infos':info,
-                
+
             }
         return render(request,'managment/parents/malle.html',context)
     def get(self,request):
-        return self.render(request)     
+        return self.render(request)
 class MalleCreate(View):
     def render(self,request):
         form=MalleForm
         return render(request,'managment/parents/add_malle.html',{'form':MalleForm})
     def get(self,request):
-        return self.render(request)     
+        return self.render(request)
     def post(self,request):
         form=MalleForm(request.POST,request.FILES)
         if form.is_valid():
             new_user = Malle.objects.create(
-                                            user=request.user, 
-                                            date_naissance=request.POST['date_naissance'], 
+                                            user=request.user,
+                                            date_naissance=request.POST['date_naissance'],
                                             )
             return redirect('malle')
         return self.render(request)
@@ -1325,7 +1419,7 @@ class MalleUpdate(View):
                 form.save()
                 return redirect('malle')
         else :
-            redirect('malle')          
+            redirect('malle')
 class MalleDelete(View):
     def render(self,request):
         return render(request,'managment/parents/delete_malle.html')
@@ -1333,16 +1427,16 @@ class MalleDelete(View):
         malle= Malle.objects.get(id=id)
         if malle.user!=request.user :
             return redirect('malle')
-        
+
         return self.render(request)
     def post(self,request,id):
         malle= Malle.objects.get(id=id)
         if malle.user==request.user:
-            malle.delete()  
+            malle.delete()
             return redirect('malle')
         else:
-            return redirect('malle')  
-        return self.render(request)      
+            return redirect('malle')
+        return self.render(request)
 class FemalleDelete(View):
     def render(self,request):
         return render(request,'managment/parents/delete_femalle.html')
@@ -1350,16 +1444,16 @@ class FemalleDelete(View):
         femalle=Femalle.objects.get(id=id)
         if femalle.user!=request.user :
             return redirect('femalle')
-        
+
         return self.render(request)
     def post(self,request,id):
         femalle= Femalle.objects.get(id=id)
         if femalle.user==request.user:
-            femalle.delete()  
+            femalle.delete()
             return redirect('femalle')
         else:
-            return redirect('femalle')  
-        return self.render(request)            
+            return redirect('femalle')
+        return self.render(request)
 class FemalleList(View):
     def render(self,request):
         user=request.user
@@ -1380,7 +1474,7 @@ class FemalleList(View):
                 'nombre_femalles_morts':Femalle.objects.filter(user=user,state='mort').count(),
                 'nombre_femalles_vendus':Femalle.objects.filter(user=user,state='vendue').count(),
                 'infos':info,
-                
+
             }
         return render(request,'managment/parents/femalle.html',context)
     def get(self,request):
