@@ -102,6 +102,7 @@ class PrixAliments(models.Model):
             else:
                 if age(coup_cons.date_changement)>=age(date) and age(coup_cons.date_changement)-age(date)<age(coup_cons_choisie.date_changement)-age(date):
                     coup_cons_choisie=coup_cons
+        
         return coup_cons_choisie
             
 class Malle(Lapin):
@@ -325,7 +326,7 @@ class GroupeProduction(models.Model):
         
         # totale des lapins morte dans le groupe
         def totale_mortalité_groupe(self):
-           return LapinProduction.objects.filter(groupe=self.id,state='mort').all()
+           return LapinProduction.objects.filter(groupe=self.id,state='mort').all().count()
                 
             
    
@@ -479,16 +480,17 @@ class GroupeProduction(models.Model):
                         if lapin.state=='mort':
                             if age(lapin.date_mort)>=age(cons['date']):
                                 nb_lapin-=1
-                    if age(GroupeProduction.objects.get(id=self.id).date_naissance)-age(cons['date'])<25:
-                        totale_coup_cons+=(0*nb_lapin)*PrixAliments.le_plus_proche_date_a_gauche(cons['date'],user).coup
-                    elif(age(GroupeProduction.objects.get(id=self.id).date_naissance)-age(cons['date']))< 30:
-                        totale_coup_cons+=(5*nb_lapin)*PrixAliments.le_plus_proche_date_a_gauche(cons['date'],user).coup
+                    if  PrixAliments.le_plus_proche_date_a_gauche(cons['date'],user) == {} :
+                          return "on peut pas fait le calcule t'as pas encore ajouter le prix des aliments"
+
+                    if(age(GroupeProduction.objects.get(id=self.id).date_naissance)-age(cons['date']))< 30:
+                        totale_coup_cons+=(5*nb_lapin)*PrixAliments.le_plus_proche_date_a_gauche(cons['date'],user)['prix']
                     elif(age(GroupeProduction.objects.get(id=self.id).date_naissance)-age(cons['date']))< 44:
-                        totale_coup_cons+=(50*nb_lapin)*PrixAliments.le_plus_proche_date_a_gauche(cons['date'],user).coup
+                        totale_coup_cons+=(50*nb_lapin)*PrixAliments.le_plus_proche_date_a_gauche(cons['date'],user)['prix']
                     elif(age(GroupeProduction.objects.get(id=self.id).date_naissance)-age(cons['date']))< 59:
-                        totale_coup_cons+=(100*nb_lapin)*PrixAliments.le_plus_proche_date_a_gauche(cons['date'],user).coup   
+                        totale_coup_cons+=(100*nb_lapin)*PrixAliments.le_plus_proche_date_a_gauche(cons['date'],user)['prix']
                     elif(age(GroupeProduction.objects.get(id=self.id).date_naissance)-age(cons['date']))> 60:
-                        totale_coup_cons+=(150*nb_lapin)*PrixAliments.le_plus_proche_date_a_gauche(cons['date'],user).coup
+                        totale_coup_cons+=(150*nb_lapin)*PrixAliments.le_plus_proche_date_a_gauche(cons['date'],user)['prix']
                 
             
             return  totale_coup_cons /1000

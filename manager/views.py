@@ -664,7 +664,7 @@ class ProductionView(APIView):
                     "mère":groupe.acouplement.mère.cage,
                     "date_acouplage":groupe.acouplement.date_acouplage,
                     "TM":groupe.totale_mortalité_groupe(),
-                    
+                   
                     "MoyPS":groupe.moyenne_poid_souvrage(),
                     "MoyPN":groupe.moyenne_poid_groupe_naissance(),
                     "MoyPDM":groupe.moyenne_poid_groupe_dernier_mesure(),
@@ -676,8 +676,8 @@ class ProductionView(APIView):
                     "cons":groupe.cons_totale(groupe.date_naissance,aujourdhui_date)/1000,
                     "cons_auj":groupe.cons_totale(aujourdhui_date,aujourdhui_date)/1000,
                     
-                    #"coup_cons":str((groupe.cons_totale(age_revers(30),aujourdhui_date)/1000*(int(GeneralConfig.objects.get(user=request.user).coup_alimentation)))),
-                    #"coup_cons_auj":str((groupe.cons_totale(age_revers(0),aujourdhui_date)/1000*(int(GeneralConfig.objects.get(user=request.user).coup_alimentation)))),
+                    "coup_cons":str((groupe.cons_totale(age_revers(30),aujourdhui_date)/1000*(int(GeneralConfig.objects.get(user=request.user).coup_alimentation)))),
+                    "coup_cons_auj":str((groupe.cons_totale(age_revers(0),aujourdhui_date)/1000*(int(GeneralConfig.objects.get(user=request.user).coup_alimentation)))),
                     
                     "coup_cons":groupe.coup_cons(groupe.date_naissance,aujourdhui_date,request.user),
 
