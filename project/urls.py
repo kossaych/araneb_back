@@ -6,11 +6,16 @@ from django.contrib.auth import views
 from rest_framework.authtoken.views import obtain_auth_token
 urlpatterns = [
     path('accounts/', include('accounts.urls')),
-    path('admin/', admin.site.urls),
+    path('admin', admin.site.urls),
     path('manager/',include('manager.urls')),
 
+
+    # django auth urls 
     #path('accounts/', include('django.contrib.auth.urls')),
-    #auth urls
+    
+    
+    # DRF auth urls
+    #path('api-auth/', include('rest_framework.urls')),
     #path('api-token-auth',obtain_auth_token),
 ]
 urlpatterns+=static(settings.MEDIA_URL,document_root=settings.MEDIA_ROOT)

@@ -43,7 +43,6 @@ REST_FRAMEWORK = {
 }
 
 
-
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
@@ -83,13 +82,22 @@ WSGI_APPLICATION = 'project.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
+#DATABASES = {
+#    'default': {
+#        'ENGINE': 'django.db.backends.sqlite3',
+#        'NAME': BASE_DIR / 'db.sqlite3',
+#    }
+#}
+
+
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': 'database.db',
+        
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
@@ -124,6 +132,9 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
+
+
+
 STATIC_ROOT=os.path.join(BASE_DIR,'static')
 STATIC_URL = '/static/'
 STATICFILES_DIRS =[
@@ -132,6 +143,10 @@ STATICFILES_DIRS =[
 #media settings
 MEDIA_ROOT = os.path.join(BASE_DIR,'media')
 MEDIA_URL = '/media/'
+
+
+
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
@@ -147,10 +162,14 @@ EMAIL_HOST_PASSWORD = 'ahvwbduwxoqcyyzo'
 EMAIL_PORT = 587
 
 
+#zoom application 
+ZOOM_API_KEY = 'VfNxb2b5Ta-Ef1wt3fz4JQ'
+ZOOM_API_SECRET = 'nnzclMpmqFiTaTRV0Hko6OUKWdhWFbqK3EBo'
+
 #CORS_ORIGIN_ALLOW_ALL = True
 CORS_ORIGIN_WHITELIST = (
     "http://127.0.0.1:3000",
-'http://localhost:3000',  # for localhost (REACT Default)
-'http://192.168.10.45:3000', # for network
+    'http://localhost:3000',  # for localhost (REACT Default)
+    'http://192.168.10.45:3000', # for network
 )
 APPEND_SLASH=False

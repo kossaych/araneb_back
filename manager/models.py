@@ -1,68 +1,71 @@
+from typing import Any
 from django.db import models
 from django.utils import timezone
-import uuid
-from accounts.models import Race,Maladie,User
 from django.db.models.signals import post_save
-from .untils import *
-import shutil
-import os
-from pathlib import Path
+
 from rest_framework import status 
 from rest_framework.response import Response
 
+from accounts.models import User,GeneralConfig
+from django.conf import settings
+from .untils import *
 
-base_path=str(Path(__file__).resolve().parent.parent)
-base_path.replace(os.sep, '/')
-
+import uuid
+import shutil
+import time
 #import pandas as pd 
+
+base_path=settings.BASE_DIR
+aujourdhui_date=str(timezone.now().year)+"-"+str(timezone.now().month)+'-'+str(timezone.now().day)
+
 def upload_to(instance,filename):
     extention = filename.split('.')[-1]
     filename = str(uuid.uuid4())+"."+(extention)
     return '/'.join([str(instance.cage),filename])
-# general Lapin Fields
-class Lapin(models.Model):
-    create_at=models.DateField(default=timezone.now)
-    img=models.ImageField(upload_to = upload_to ,null=True , blank=True)
-    user=models.ForeignKey(User,on_delete=models.CASCADE ,null=True,blank=True)
-    cage=models.CharField(max_length=50,null=True,blank=True)
-    race=models.ForeignKey(Race,on_delete=models.CASCADE ,null=True,blank=True)
-    #date_naissance=models.DateField(default=timezone.now)
-    state=models.CharField(max_length=50, default='production',choices=[("mort","mort"),("vendue","vendue"),("production","production")])
-    date_mort=models.DateField(null=True,blank=True)
-    prix=models.IntegerField(null=True,blank=True)
-    date_vent=models.DateField(null=True,blank=True)  
-    #supremer la femalle et ca photo
-    def delete_(self):
-        """         poids=PoidFemalle.objects.filter(femalle=femalle)
-                for poid in poids:
-                    poid.delete() """
-        try:
-            shutil.rmtree((base_path+'/media/'+str(self.img)[:str(self.img).index('/')]))
-        except :
-            pass
-        self.delete()
-    # vent la femalle
-    def vent(self,prix,date_vent):
-            if prix != None and prix != "" and int(prix) > 0 :                              
-                self.prix= prix  
-            else:return Response("prix invalide",status=status.HTTP_400_BAD_REQUEST)                                                   
-            if date_vent!=None and date_vent!="" and not(age(date_vent)<0 or age(self.date_naissance)<age(date_vent)):  
-                    self.date_vent=date_vent
-            else:return Response("date de vent invalide",status=status.HTTP_400_BAD_REQUEST)  # l'age d'une mère doit etre super à 4 mois (120jours)     
-            self.state='vendue'
-            self.save()
-            return Response(status=status.HTTP_202_ACCEPTED)
-    def mort (self,date_mort):
-            if date_mort!=None and date_mort!="" and not(age(date_mort)<0 or age(self.date_naissance)<age(date_mort)):  
-                    self.date_mort=date_mort
-            else:return Response("date de mort invalide",status=status.HTTP_400_BAD_REQUEST)
-            self.state='mort'
-            self.save() 
-            return Response(status=status.HTTP_202_ACCEPTED)
+
+
+
+
+
+
+
+
+
+
+class Race(models.Model):
+    user=models.ForeignKey(User,on_delete=models.CASCADE)
+    race=models.CharField(max_length=200,unique=True)
+    Moyenne_poid_malle=models.IntegerField(default=3500)
+    Moyenne_poid_femalle=models.IntegerField(default=3000)
+    Moyenne_production_annuelle=models.IntegerField(default=50)
+    Moyenne_poid_2moi=models.IntegerField(default=3500)
+    Moyenne_production_par_accouplement=models.IntegerField(default=50)
     def __str__(self):
-            return str(self.cage)
-    class Meta:
-        abstract = True # Use this when the parent class contains common fields and the parent class table is not desirable.
+         return self.race
+    
+
+
+class Maladie(models.Model):
+    TYPES_MALADIES_LAPINS=[   
+                        ("Les_maladies_dermatologiques","Les maladies dermatologiques"),
+                        ("Les_maladies_respiratoires","Les maladies respiratoires"),
+                        ("Les_maladies_digestives","Les maladies digestives"),
+                        ("Les_maladies_de_l'appareil_urinaire","Les maladies de l'appareil urinaire"),
+                        ("La_maladie_hémorragique_du_lapin","La maladie hémorragique du lapin"),
+                        ("Les_tumeurs","Les tumeurs"),
+    ]
+
+    maladie=models.CharField(max_length=200,default='____')
+    type=models.CharField(choices=TYPES_MALADIES_LAPINS,max_length=200,default='__')
+    def __str__(self):
+        return str(self.maladie)
+
+
+
+
+
+
+
 # general Vaccin Fields
 class Vaccin(models.Model):
     user=models.ForeignKey(User,on_delete=models.CASCADE,null=True , blank=True)
@@ -71,8 +74,8 @@ class Vaccin(models.Model):
     nom=models.CharField(max_length=50,null=True,blank=True)
     prix=models.IntegerField(null=True,blank=True)
     maladie=models.ForeignKey(Maladie,on_delete=models.CASCADE,null=True , blank=True)
-    def __str__(self):
-            return str(self.nom+" contre "+self.maladie)  
+    #def __str__(self):
+    #        return str(self.nom+" contre "+self.maladie)  
     class Meta :
         abstract = True # Use this when the parent class contains common fields and the parent class table is not desirable.
 # general poid fields
@@ -82,8 +85,82 @@ class Poid(models.Model):
     class Meta :
         abstract = True # Use this when the parent class contains common fields and the parent class table is not desirable.
 
+# general Lapin Fields
+
+class Lapin(models.Model):
+    
+    create_at=models.DateField(default=timezone.now)
+    img=models.ImageField(upload_to = upload_to ,null=True , blank=True)
+    user=models.ForeignKey(User,on_delete=models.CASCADE ,null=True,blank=True)
+    
+    cage=models.CharField(max_length=50,null=True,blank=True)
+    
+    race = models.ForeignKey(Race,on_delete=models.CASCADE ,null=True,blank=True)
+    
+    #date_naissance=models.DateField(default=timezone.now)
+    state=models.CharField(max_length=50, default='production',choices=[("mort","mort"),("vendue","vendue"),("production","production")])
+    date_mort=models.DateField(null=True,blank=True)
+    prix=models.IntegerField(null=True,blank=True)
+    date_vent=models.DateField(null=True,blank=True)  
+
+    #supremer la femalle et ca photo
+    def delete(self,*args, **kwargs):
+        try:
+            shutil.rmtree((base_path+'/media/'+str(self.img)[:str(self.img).index('/')]))
+        except :
+            pass
+        super().delete(*args, **kwargs)
 
 
+    # vent la femalle
+    def vent(self,prix,date_vent):
+            if self.state == "production": 
+                try :
+                    prix=int(prix)
+                except :
+                    return Response("prix invalide",status=status.HTTP_400_BAD_REQUEST)
+                if prix > 0 :                              
+                    self.prix = prix  
+                else:return Response("prix invalide",status=status.HTTP_400_BAD_REQUEST)                                                   
+                
+                try :
+                    age_lapin=age(self.date_naissance)
+                    vendé_depuis=age(date_vent)
+                except:
+                    return Response("date de vent invalide",status=status.HTTP_400_BAD_REQUEST)  
+               
+               
+                if vendé_depuis >= 0 and age_lapin-vendé_depuis >= 0 :   
+                        self.date_vent = date_vent
+                else : return Response("date de vent invalide",status=status.HTTP_400_BAD_REQUEST)  
+                
+
+                self.state='vendue'
+                self.save()
+                return Response(status=status.HTTP_202_ACCEPTED)
+            return Response("invalid request",status=status.HTTP_400_BAD_REQUEST) 
+    def mort (self,date_mort):
+        if self.state == "production":
+            try :
+                age_lapin=age(self.date_naissance)
+                mort_depuis=age(date_mort)
+            except:
+                return Response("date de mort invalide",status=status.HTTP_400_BAD_REQUEST) 
+            if mort_depuis >= 0 and age_lapin-mort_depuis>=0:   
+                    self.date_mort=date_mort
+            else : return Response("date de mort invalide",status=status.HTTP_400_BAD_REQUEST) 
+            
+            self.state='mort'
+            self.save() 
+            return Response(status=status.HTTP_202_ACCEPTED)
+        return Response("invalid request",status=status.HTTP_400_BAD_REQUEST) 
+
+    def age (self) : 
+          return age_handler(self.date_naissance)
+    def __str__(self):
+            return str(self.cage)
+    class Meta:
+        abstract = True # Use this when the parent class contains common fields and the parent class table is not desirable.
 
 
 
@@ -106,6 +183,7 @@ class PrixAliments(models.Model):
         return coup_cons_choisie
             
 class Malle(Lapin):
+    acouplements = models.ManyToManyField('Femalle', through="Accouplement")
     date_naissance=models.DateField(default=timezone.now) 
     @classmethod
     def __virif_cage(cls,cage,user):
@@ -120,8 +198,19 @@ class Malle(Lapin):
                     return 'M'+str(cage)
         max=len(cls.objects.filter(user=user))
         return 'M'+str(max+1)
- 
+    
+    def mesures_poids(self):
+        poids = PoidMalle.objects.filter(malle=self) 
+        return  [   {
+                        'malle':str(self.id),
+                        'valeur':str(poid.valeur),
+                        'date_mesure':str(poid.date_mesure),
+                    } 
+                    for poid in poids 
+                ]  
+    
 class Femalle(Lapin):
+    acouplements = models.ManyToManyField(Malle, through="Accouplement")
     date_naissance=models.DateField(default=timezone.now)
     @classmethod
     # une fonction pour verifier la posibilité de l'utilisation d'un num de cage return bool
@@ -140,20 +229,26 @@ class Femalle(Lapin):
         return 'F'+str(max+1)
     
     def dernier_groupe_production(self):
-            date=""
-            dernier_groupe={}
-            for groupe in GroupeProduction.objects.all():
-                if groupe.acouplement.mère.id==self:
-                        if date=="":
-                            date=groupe.date_naissance
-                            dernier_groupe=groupe
-                        elif age(groupe.date_naissance)<age(date):
-                            date=groupe.date_naissance
-                            dernier_groupe=groupe
-            if dernier_groupe=={}:
+            date = ""
+            dernier_groupe = {}
+            groupes = GroupeProduction.objects.filter(acouplement__mère = self )  
+            print(list(groupes))
+            for groupe in groupes:
+               # if groupe.acouplement.mère.id == self.id:
+                        if date == "":
+                            date = groupe.date_naissance
+                            dernier_groupe = groupe
+                        elif age(groupe.date_naissance) < age(date):
+                            date = groupe.date_naissance
+                            dernier_groupe = groupe
+            if dernier_groupe == {}:
                 return False # False sig que la femalle n"a pas encore des groupe
             else :
                 return dernier_groupe  
+            
+
+
+
      # retourner True si la femalle est nourice dans un jour précie sinon False
     # virifier si la femalle nourice ou nom  return bool
     def nourice(self,date_jour) :  
@@ -199,42 +294,69 @@ class Femalle(Lapin):
                     cons=cons+150
         return cons
     
-    def mesures_poids(self):
-        poids=[]
-        poids.clear()
-        for poid in PoidFemalle.objects.filter(femalle=self):
-                    poids.append(
-                                {
-                                    'femalle':str(self.id),
-                                    'valeur':str(poid.valeur),
-                                    'date_mesure':str(poid.date_mesure),
-                                }
-                                )   
-        return poids     
+    def mesures_poids(self):  
+        mesures_poid = PoidFemalle.objects.filter(femalle=self)     
+        for poid in mesures_poid :
+                print(poid)
+                yield {
+                      
+                    'valeur': str(poid.valeur), 
+                    'date_mesure': str(poid.date_mesure)
+
+                }
 
     def est_acouplet(self):
+            
             for acc in Accouplement.objects.filter(mère=self,state="avant_naissance"):
                 if (age(acc.date_acouplage)<=35 and (acc.test=="enceinte" or acc.test=="non_vérifié")):
                     return True
+            
+
+
+
+            self.acouplements.all()
             return False
     
+    
+    
+    def statistique(self):
+        # Calculate statistics
+        statistiques = {}
+
+        try:
+            # Retrieve the latest group production associated with the Femalle
+            dernier_groupe_production = self.dernier_groupe_production()
+            # Calculate the total production, total mortality, and total mortality at birth
+            statistiques['TP'] = dernier_groupe_production.nb_lapins_nées
+            statistiques['TM'] = dernier_groupe_production.totale_mortalité_groupe()
+            statistiques['TMN'] = dernier_groupe_production.nb_lapins_mortes_naissances
+            # Calculate the net production (total production minus total mortality)
+            statistiques['TPnet'] = statistiques['TP'] - statistiques['TM']
+            statistiques['dernière_groupe'] = dernier_groupe_production.id
+        except:
+            # If an error occurs, set the statistics values to zero and an empty dictionary
+            statistiques['TP'] = 0
+            statistiques['TM'] = 0
+            statistiques['TMN'] = 0
+            statistiques['TPnet'] = 0
+            statistiques['dernière_groupe'] = {}
+
+        # Calculate consumption statistics
+        cons_moi = self.cons(age_revers(30), aujourdhui_date) / 1000
+        cons_aujourdhui = self.cons(age_revers(0), aujourdhui_date) / 1000
+        general_config = GeneralConfig.objects.get(user=self.user)
+        coup_cons_moi = cons_moi * int(general_config.coup_alimentation) / 1000
+        coup_cons_aujourdhui = cons_aujourdhui * int(general_config.coup_alimentation) / 1000
+
+        # Add consumption statistics to the 'statistiques' dictionary
+        statistiques['cons_moi'] = str(cons_moi) + ' kg'
+        statistiques['cons_aujourdhui'] = str(cons_aujourdhui) + ' kg'
+        statistiques['coup_cons_moi'] = str(coup_cons_moi) + ' dt'
+        statistiques['coup_cons_aujourdhui'] = str(coup_cons_aujourdhui) + ' dt'
+        return statistiques
+
     def __str__(self):
             return str(self.cage)
-        # verifier si une femalle est acouplet ou non 
-    
-class VaccinMalle(Vaccin):
-    malle=models.ForeignKey(Malle,on_delete=models.CASCADE ,null=True , blank=True)
-
-class VaccinFemalle(Vaccin):
-    femalle=models.ForeignKey(Femalle,on_delete=models.CASCADE ,null=True , blank=True)
-
-class PoidMalle(Poid):
-    malle=models.ForeignKey(Malle,on_delete=models.CASCADE ,null=True , blank=True)
-
-class PoidFemalle(Poid):
-    femalle=models.ForeignKey(Femalle,on_delete=models.CASCADE ,null=True , blank=True)
-
-
 
 #production     
 class Accouplement(models.Model):
@@ -248,16 +370,22 @@ class Accouplement(models.Model):
             ('avant_naissance','avant_naissance'),
             ('aprés_naissance','aprés_naissance'),
     ]
+    
+    père=models.ForeignKey(Malle,on_delete=models.CASCADE,null=True , blank=True)
+    mère=models.ForeignKey(Femalle,on_delete=models.CASCADE,null=True , blank=True)
+    
     create_at=models.DateField(default=timezone.now)
     num=models.CharField(max_length=50,null=True,blank=True)
     user=models.ForeignKey(User,on_delete=models.CASCADE,null=True , blank=True)
-    père=models.ForeignKey(Malle,on_delete=models.CASCADE,null=True , blank=True)
-    mère=models.ForeignKey(Femalle,on_delete=models.CASCADE,null=True , blank=True)
+
     date_acouplage=models.DateField(default=timezone.now)
     date_fausse_couche=models.DateField(null=True , blank=True)
     date_test=models.DateField(null=True , blank=True)
     test=models.CharField(choices=TEST_ACOUPLAGE ,max_length=200,default='non_vérifié')
     state=models.CharField(choices=STATE_ACOUPLAGE ,max_length=200,default='avant_naissance')
+   
+   
+   
     @classmethod
     def virif_num(cli,num,user):
         for acc in cli.objects.filter(user=user):
@@ -281,6 +409,20 @@ class Accouplement(models.Model):
     def __bool__(self):
           return self.state == 'avant_naissance'
 
+
+class VaccinMalle(Vaccin):
+    malle=models.ForeignKey(Malle,on_delete=models.CASCADE ,null=True , blank=True)
+
+class VaccinFemalle(Vaccin):
+    femalle=models.ForeignKey(Femalle,on_delete=models.CASCADE ,null=True , blank=True)
+
+class PoidMalle(Poid):
+    malle=models.ForeignKey(Malle,on_delete=models.CASCADE ,null=True , blank=True)
+
+class PoidFemalle(Poid):
+    femalle=models.ForeignKey(Femalle,on_delete=models.CASCADE ,null=True , blank=True)
+
+
 class GroupeProduction(models.Model):
         #information principale
         create_at=models.DateField(default=timezone.now)
@@ -298,6 +440,7 @@ class GroupeProduction(models.Model):
             for groupe in cls.objects.filter(user=user):
                         if cage == int((groupe.cage)[1:]):
                             return True
+            
             return False  
         @classmethod
         # retoiurner un cage vide pour les naveaux groupe    
@@ -323,15 +466,10 @@ class GroupeProduction(models.Model):
                     return True
             return False  """
         
-        
         # totale des lapins morte dans le groupe
         def totale_mortalité_groupe(self):
            return LapinProduction.objects.filter(groupe=self.id,state='mort').all().count()
-                
-            
-   
-   
-   
+
         # moyenne des poids des lapins des productions d'un groupe a la naissance  
         def moyenne_poid_groupe_naissance(self):
             moy=0
@@ -407,8 +545,6 @@ class GroupeProduction(models.Model):
 
                     return moyenne_poids   
         
-        
-        
         #nombre des malles ou des femalles dans le groupe 
         def nombre_malle_groupe(self):
                     nb=0
@@ -422,9 +558,6 @@ class GroupeProduction(models.Model):
                         if lapin.sex=="femalle":
                                 nb=nb+1
                     return nb   
-        
-        
-        
         
         
         # calculer le taux des consomation du groupe entre deux date
@@ -495,9 +628,6 @@ class GroupeProduction(models.Model):
             
             return  totale_coup_cons /1000
 
-
-
-
         # calculer le moyenne des poid des lapins du groupe au sevrage
         def moyenne_poid_souvrage(self):
             moy=0
@@ -511,9 +641,6 @@ class GroupeProduction(models.Model):
                 return int(moy/nb) 
             else:
                 return "y'a pas des mesures"
-        
-        
-        
         
         ###################////////// les statistiques des vent //////////////////###########
         # return le nombre des lapins vendues  pandant ce mois
@@ -576,9 +703,6 @@ class GroupeProduction(models.Model):
                 return self.totaleprix(self)/self.TV() 
             return 0                        
       
-      
-      
-      
         # le plus grand poid des poids du dernière groupe du production a la naissance
         def TOPPN(self):
                     max=0
@@ -637,33 +761,10 @@ class GroupeProduction(models.Model):
                                     min=poid.valeur
                     if min == '' :return 0
                     return min      
-
-
-
-
-
+        
+        
         def __str__(self):
             return str(self.cage)     
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 class LapinProduction(Lapin):
     groupe=models.ForeignKey(GroupeProduction,on_delete=models.CASCADE,default=1)
@@ -726,6 +827,8 @@ class LapinProduction(Lapin):
             return dates
     # moyenne des poids des lapins des productions du groupe a partir de son naissance
     def poid_lapin_list(self):
+                    
+                    
                     dates=self.dates_mesure_poids()
                     poids=[]
                     for date in dates:
@@ -740,17 +843,25 @@ class LapinProduction(Lapin):
                         
                         
                     return poids    
+    
+
+
+
+
+
+
+
     def vaccins (self):
-        vaccins=[]
-        for vaccin in VaccinLapin.objects.filter(lapin=self.id):
-            vaccins.append(
-                                {
+        vaccins = [ {
                                     "nom":str(vaccin.nom),
                                     "date_vaccin":str(age_handler(vaccin.date_vaccin)),
                                     "prix":str(vaccin.prix),
                                     "maladie":str(vaccin.maladie),
-                                }
-                            )    
+                    } 
+
+                for vaccin in VaccinLapin.objects.filter(lapin=self.id)
+                ]
+       
         return vaccins           
     
 class PoidLapinProduction(Poid):
@@ -779,6 +890,3 @@ def create_lapin(sender,instance,created,**kwargs):
                                                         state='production',
                                                         )                  
 post_save.connect(create_lapin,sender=GroupeProduction)
-
-
-

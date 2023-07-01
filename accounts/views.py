@@ -1,19 +1,24 @@
 from .models import*
 from manager.models import*
-from .models import*
 from .serializers import*
 from django.contrib.auth import authenticate
 from django.utils import timezone
 import random
 import string
+
+
 from django.contrib.auth.models import User
 from django.core.mail import EmailMessage
+
+
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
+
+
 import hashlib
 # fonction genere un code de virification pour l'envoiyer au l'email
 def generate_code():
@@ -81,6 +86,9 @@ def check_code_time(created_at):
                         if (timezone.now().minute)<=3 and minute>=57 and (60-minute)+timezone.now().minute <= 3: 
                             return True 
         return False
+
+
+
 class RegisterView(APIView):
     ######################deux fonction pour asurer la generation des nevaux username#############
     def virif_user_number(self,first,last,number):
@@ -112,15 +120,19 @@ class RegisterView(APIView):
                             else :
                                 return Response('this email is alredy used try with an author email',status=status.HTTP_400_BAD_REQUEST)      
                         username=self.generate_username(first_name,last_name).strip()
+                        
                         user=User(first_name=first_name,last_name=last_name,username =username, email=email,password=password1,is_active=False)
                         user.save() 
-
-
+                        
                         code=generate_code()  
                         CodeVirif.objects.filter(username=user).delete  
                         code_hashed = hashlib.md5() 
                         code_hashed.update(code.encode('utf-8'))
+                       
+                       
                         CodeVirif.objects.create(username=user,code=code_hashed.hexdigest(),created_at=timezone.now())  
+                        
+                        
                         email = EmailMessage('Activate your account.',code, to=[request.data.get('email')])
                         email.send()
 
@@ -232,7 +244,7 @@ class ChangePassword(APIView):
         new_password1=request.data.get('password1')
         new_password2=request.data.get('password2')
         user=authenticate(password=old_password,username=request.user.username)
-        if user != None:
+        if user != None :
                     if check_password(new_password1) and new_password1 == new_password2 :
                             user.set_password(new_password1)
                             user.save()

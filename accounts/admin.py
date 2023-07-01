@@ -4,5 +4,3 @@ from .models import*
 admin.site.register(Profil)
 admin.site.register(CodeVirif)
 admin.site.register(GeneralConfig)
-admin.site.register(Race)
-admin.site.register(Maladie)

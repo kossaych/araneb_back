@@ -1,9 +1,18 @@
 from rest_framework import serializers
 from .models import*
+
+
+
+
+
 class MalleSerializer(serializers.ModelSerializer):
     class Meta :
         model=Malle
         fields=("race","date_naissance","cage","img",)
+
+
+
+
 class FemalleSerializer(serializers.ModelSerializer):
     class Meta :
         model=Femalle
@@ -16,6 +25,9 @@ class FemalleSerializer(serializers.ModelSerializer):
                 "prix",
                 "date_vent",
          ]
+        
+
+        
 class PoidMalleSerializer(serializers.ModelSerializer):
     class Meta :
         model=Malle
@@ -24,19 +36,11 @@ class PoidFemalleSerializer(serializers.ModelSerializer):
     class Meta :
         model=Femalle
         fields='__all__'
+class VaccinFemalleSerializer(serializers.ModelSerializer):
+    class Meta :
+        model=VaccinFemalle
+        fields="__all__"
 
-
-
-
-
-
-
-
-
-
-
-from rest_framework import serializers
-from .models import*
 class AccouplementSerializer(serializers.ModelSerializer):
     class Meta :
         model=Accouplement

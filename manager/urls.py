@@ -1,8 +1,24 @@
-from django.urls import path
 from . import views
+from . views import *
+
+from rest_framework.urlpatterns import format_suffix_patterns
+
+from django.urls import include, path
+#from rest_framework.routers import DefaultRouter
+
+
+#router = DefaultRouter()
+#router.register(r'test', VaccinFemalleView, basename='test')
+
+
+
 urlpatterns = [
+
+
+    #path('api/', include(router.urls)),
+
     #### views urls
-    path('',views.MalleList.as_view(),name="malle"),
+   # path('',views.MalleList.as_view(),name="malle"),
     path('api/malles',views.MalleView.as_view(),name=""),
     path('api/malle/<int:id>',views.MalleViewPk.as_view(),name=''),
     path('api/femalles',views.FemalleView.as_view(),name=""),
@@ -16,11 +32,6 @@ urlpatterns = [
     path('api/malle/vent/<int:id>',views.MalleVentPk.as_view(),name=''),
     path('api/femalle/mort/<int:id>',views.FemalleMortPk.as_view(),name=''),
     path('api/malle/mort/<int:id>',views.MalleMortPk.as_view(),name=''),
-
-
-
-
-
 
    path('groupes',views.ProductionView.as_view(),name='production'), 
    path('groupes/<int:id>',views.ProductionViewPk.as_view(),name="production_update"), 
@@ -49,6 +60,8 @@ urlpatterns = [
    path('lapins_productions',views.LapinProductionView.as_view(),name='LapinProduction'), 
    path('lapins_productions/<int:id>',views.LapinProductionViewPk.as_view(),name="LapinProduction_pk"), 
 ]
+# pour controler les format des response
+urlpatterns = format_suffix_patterns(urlpatterns)
 
 
 

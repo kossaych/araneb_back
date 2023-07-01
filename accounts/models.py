@@ -5,29 +5,11 @@ from django.utils import timezone
 from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
 
-class Race(models.Model):
-    user=models.ForeignKey(User,on_delete=models.CASCADE)
-    race=models.CharField(max_length=200,default='------')
-    Moyenne_poid_malle=models.IntegerField(default=3500)
-    Moyenne_poid_femalle=models.IntegerField(default=3000)
-    Moyenne_production_annuelle=models.IntegerField(default=50)
-    Moyenne_poid_2moi=models.IntegerField(default=3500)
-    Moyenne_production_par_accouplement=models.IntegerField(default=50)
-    def __str__(self):
-         return self.race
-class Maladie(models.Model):
-    TYPES_MALADIES_LAPINS=[   
-                        ("Les_maladies_dermatologiques","Les maladies dermatologiques"),
-                        ("Les_maladies_respiratoires","Les maladies respiratoires"),
-                        ("Les_maladies_digestives","Les maladies digestives"),
-                        ("Les_maladies_de_l'appareil_urinaire","Les maladies de l'appareil urinaire"),
-                        ("La_maladie_hémorragique_du_lapin","La maladie hémorragique du lapin"),
-                        ("Les_tumeurs","Les tumeurs"),
-    ]
-    maladie=models.CharField(max_length=200,default='____')
-    type=models.CharField(choices=TYPES_MALADIES_LAPINS,max_length=200,default='__')
-    def __str__(self):
-        return str(self.maladie)
+
+
+
+
+
 class GeneralConfig(models.Model):
     user=models.ForeignKey(User,on_delete=models.CASCADE)
     DEVISE_LIST=(('din tun','din tun'),('din alg','din alg'))
